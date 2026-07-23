@@ -1,0 +1,251 @@
+%------------------------
+% Resume Template
+% Author : Anubhav Singh
+% Github : https://github.com/xprilion
+% License : MIT
+% Edited for: Sambit Kumar Ghosh
+%------------------------
+
+\documentclass[a4paper,20pt]{article}
+
+\usepackage{latexsym}
+\usepackage[empty]{fullpage}
+\usepackage{titlesec}
+\usepackage{marvosym}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{verbatim}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% Adjust margins
+\addtolength{\oddsidemargin}{-0.530in}
+\addtolength{\evensidemargin}{-0.375in}
+\addtolength{\textwidth}{1in}
+\addtolength{\topmargin}{-.45in}
+\addtolength{\textheight}{1in}
+
+\urlstyle{rm}
+
+\raggedbottom
+\raggedright
+\setlength{\tabcolsep}{0in}
+
+% Sections formatting
+\titleformat{\section}{
+  \vspace{-10pt}\scshape\raggedright\large
+}{}{0em}{}[\color{black}\titlerule \vspace{-6pt}]
+
+%-------------------------
+% Custom commands
+
+\newcommand{\resumeItem}[2]{
+  \item\small{
+    \textbf{#1}{: #2 \vspace{-2pt}}
+  }
+}
+
+\newcommand{\resumeSubheading}[4]{
+  \vspace{-1pt}\item
+    \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
+      \textbf{#1} & #2\\
+      \textit{#3} & \textit{#4}\\
+    \end{tabular*}\vspace{-5pt}
+}
+
+\newcommand{\resumeSubItem}[2]{\resumeItem{#1}{#2}\vspace{-3pt}}
+
+\renewcommand{\labelitemii}{$\circ$}
+
+\newcommand{\resumeSubHeadingListStart}{\begin{itemize}[leftmargin=*]}
+\newcommand{\resumeSubHeadingListEnd}{\end{itemize}}
+\newcommand{\resumeItemListStart}{\begin{itemize}}
+\newcommand{\resumeItemListEnd}{\end{itemize}\vspace{-5pt}}
+
+%-----------------------------
+%%%%%% CV STARTS HERE %%%%%%
+
+\begin{document}
+
+%----------HEADING-----------------
+
+\begin{tabular*}{\textwidth}{l@{\extracolsep{\fill}}r}
+\textbf{{\LARGE Sambit Kumar Ghosh}} &
+Email: \href{mailto:sambitghosh56@gmail.com}{sambitghosh56@gmail.com} \\
+\href{https://www.linkedin.com/in/samcoder}{LinkedIn: linkedin.com/in/samcoder} &
+\href{https://github.com/Sam123336}{GitHub: github.com/Sam123336} \\
+Software Engineer | Backend | AI Developer Tools &
+Mobile: +91-6297740792 \\
+Bengaluru, India &
+\end{tabular*}
+
+%-----------SUMMARY-----------------
+
+\section{~~Summary}
+
+\small{
+Software Engineer with experience building production backend systems and AI-powered developer tools. Built scalable backend services for Belivmart, a hyperlocal delivery platform serving 10+ cities, and developed \textbf{Contextify}, a compiler-inspired Software Knowledge Graph that enables AI coding assistants to understand frontend projects through AST analysis, graph algorithms, and incremental indexing. Passionate about distributed systems, developer infrastructure, AI tooling, performance optimization, and scalable software architecture.
+}
+
+%-----------EDUCATION-----------------
+
+\section{~~Education}
+
+\resumeSubHeadingListStart
+
+\resumeSubheading
+{Lovely Professional University}
+{Phagwara, Punjab}
+{Bachelor of Technology - Computer Science and Engineering}
+{Aug 2022 -- Jul 2026}
+
+\resumeSubHeadingListEnd
+
+%-----------SKILLS-----------------
+
+\section{Skills Summary}
+
+\resumeSubHeadingListStart
+
+\resumeSubItem{Languages}
+{JavaScript, TypeScript, SQL}
+
+\resumeSubItem{Backend}
+{NestJS, Node.js, Express.js, REST APIs, RabbitMQ, Authentication \& Authorization, Webhooks}
+
+\resumeSubItem{Developer Tools}
+{MCP, TypeScript Compiler API, AST Parsing, Static Analysis, Graph Algorithms}
+
+\resumeSubItem{Databases}
+{PostgreSQL, MongoDB, Redis}
+
+\resumeSubItem{Cloud \& DevOps}
+{AWS, Docker, Kubernetes, Terraform, CI/CD}
+
+\resumeSubItem{Concepts}
+{System Design, Distributed Systems, Compiler Design, Software Architecture, Performance Optimization}
+
+\resumeSubItem{Tools}
+{Git, GitHub, Linux, Postman}
+
+\resumeSubHeadingListEnd
+
+%-----------EXPERIENCE-----------------
+
+\section{Experience}
+
+\resumeSubHeadingListStart
+
+\resumeSubheading
+{Kuvi Technomart LLP}
+{Bengaluru, India}
+{Full Stack Developer}
+{Jun 2026 -- Present}
+
+\resumeItemListStart
+
+\resumeItem{Backend Development}
+{Developed and maintained scalable backend services and REST APIs using \textbf{NestJS, Node.js, PostgreSQL and Redis} for Belivmart, a production hyperlocal delivery platform serving \textbf{10+ cities}.}
+
+\resumeItem{Payments \& Business Automation}
+{Integrated third-party payment gateways and developed an automated refund and cancellation engine that calculated customer refunds and merchant payouts based on order lifecycle events, cancellation reasons, and configurable business rules.}
+
+\resumeItem{Performance Optimization}
+{Reduced route serviceability API latency from \textbf{\(\sim\)900 ms to \(\sim\)100 ms} using Redis caching with cache invalidation, and optimized serviceability polygon queries by redesigning storage from JSONB to arrays, reducing query time from \textbf{\(\sim\)800 ms to \(\sim\)110 ms}.}
+
+\resumeItem{Scalability \& Reliability}
+{Implemented RabbitMQ-based event-driven communication, optimized database access by eliminating N+1 query patterns using SQL joins, and resolved concurrent request race conditions using Redis-based distributed locking.}
+
+\resumeItemListEnd
+
+\vspace{6pt}
+
+\resumeSubheading
+{Kuvi Networks}
+{Bengaluru, India}
+{Full Stack Developer Intern}
+{Dec 2025 -- May 2026}
+
+\resumeItemListStart
+
+\resumeItem{Backend Engineering}
+{Built backend modules and REST APIs using Node.js, Express.js and MongoDB, including authentication, authorization, schema design and third-party integrations.}
+
+\resumeItem{API Development}
+{Contributed to API optimization, debugging, production issue resolution and clean architecture implementation using Git workflows.}
+
+\resumeItem{Collaboration}
+{Worked with cross-functional teams to deliver scalable production-ready features in an Agile environment.}
+
+\resumeItemListEnd
+
+\resumeSubHeadingListEnd
+
+%-----------PROJECTS-----------------
+
+\section{Projects}
+
+\resumeSubHeadingListStart
+
+\resumeSubItem
+{Contextifly -- Persistent Context Engine for AI Coding Assistants (\href{https://awesomeclaudeplugins.com/Sam123336/Contextifly}{Link})}
+{
+Designed and built a compiler-inspired developer platform that transforms frontend projects into a live \textbf{Software Knowledge Graph} using AST parsing and static analysis, enabling AI coding assistants to understand project architecture without repeatedly reading source code.
+
+\begin{itemize}[leftmargin=*,nosep]
+
+\item Built screenshot understanding with \textbf{90--95\% vision token reduction} through structured developer context generation.
+
+\item Developed a unified intermediate representation (IR) supporting \textbf{React, Next.js and Flutter}.
+
+\item Implemented compiler-style incremental indexing with per-file symbol caching, reducing no-change re-indexing to \textbf{17 ms}.
+
+\item Built architecture scoring, impact analysis, feature graphs, temporal graph diffing, screenshot-to-code mapping, reverse API queries and interactive project visualization.
+
+\item Developed an MCP-compatible platform with a local-first architecture where source code never leaves the user's machine.
+
+\end{itemize}
+
+Tech: TypeScript, Node.js, MCP, TypeScript Compiler API, Graph Algorithms, Static Analysis, Mermaid, HTML, CSS
+
+}
+
+\vspace{4pt}
+
+\resumeSubItem
+{Belivmart -- Hyperlocal Delivery Platform}
+{
+Backend development for a production grocery and food delivery platform serving \textbf{10+ cities}. Implemented serviceability logic, scalable REST APIs, payment workflows, Redis caching, RabbitMQ-based event processing and PostgreSQL query optimization.
+
+Tech: NestJS, Node.js, PostgreSQL, MongoDB, Redis, RabbitMQ, Docker, AWS
+}
+
+\resumeSubHeadingListEnd
+
+%-----------CERTIFICATIONS-----------------
+
+\section{Certifications}
+
+\resumeSubHeadingListStart
+
+\resumeSubItem{NPTEL Cloud Computing}{IIT Kharagpur}
+
+\resumeSubItem{IBM DevOps and Software Engineering Specialization}{Coursera}
+
+\resumeSubItem{The Bits and Bytes of Computer Networking}{Google / Coursera}
+
+\resumeSubItem{Build AI Apps with ChatGPT, DALL-E and GPT-4}{Online Certification}
+
+\resumeSubItem{Prompt Engineering for ChatGPT}{Online Certification}
+
+\resumeSubItem{ChatGPT Advanced Data Analysis}{Online Certification}
+
+\resumeSubHeadingListEnd
+
+\end{document}
