@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { NAV_LINKS } from "@/data/nav";
 
@@ -13,11 +14,14 @@ export default function NavShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="md:flex md:min-h-screen">
       <aside className="sticky top-0 z-40 flex items-center gap-3 border-b border-border bg-bg/90 px-4 py-3 backdrop-blur md:block md:h-screen md:w-56 md:shrink-0 md:border-b-0 md:border-r md:px-5 md:py-8">
-        <Link
-          href="/"
-          className="shrink-0 font-mono text-sm font-semibold tracking-wider text-foreground"
-        >
-          S/G
+        <Link href="/" className="shrink-0" aria-label="Home">
+          <Image
+            src="/avatar.png"
+            alt="Sambit Ghosh"
+            width={36}
+            height={36}
+            className="rounded-full border border-accent/40 shadow-[0_0_14px_var(--color-accent-glow)]"
+          />
         </Link>
 
         <nav className="hidden md:mt-10 md:flex md:flex-col md:gap-1">

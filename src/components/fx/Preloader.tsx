@@ -118,9 +118,15 @@ export default function Preloader() {
     >
       {/* logo mark */}
       <div className="pl-logo mb-8 flex items-center gap-3 opacity-0">
-        <span className="flex h-10 w-10 items-center justify-center rounded-md border border-accent/50 bg-accent/10 font-mono text-sm font-bold text-accent shadow-[0_0_20px_var(--color-accent-glow)]">
-          S/G
-        </span>
+        {/* plain img: next/image inside a GSAP-animated overlay adds no value here */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/avatar.png"
+          alt=""
+          width={44}
+          height={44}
+          className="rounded-full border border-accent/50 shadow-[0_0_24px_var(--color-accent-glow)]"
+        />
         <span className="font-mono text-[10px] uppercase tracking-[0.35em] text-foreground-muted">
           backend · systems
         </span>
