@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { JetBrains_Mono, IBM_Plex_Sans } from "next/font/google";
 import NavShell from "@/components/nav/NavShell";
 import Preloader from "@/components/fx/Preloader";
+import PixelGuide from "@/components/fx/PixelGuide";
 import "./globals.css";
 
 const jetbrainsMono = JetBrains_Mono({
@@ -35,6 +36,7 @@ export default function RootLayout({
       <body className="min-h-full bg-bg font-sans text-foreground">
         <Preloader />
         <NavShell>{children}</NavShell>
+        <PixelGuide />
       </body>
     </html>
   );

@@ -26,6 +26,23 @@ export function MailIcon({ size = 14 }: { size?: number }) {
   );
 }
 
+export function ChevronIcon({ size = 14, dir = "right" }: { size?: number; dir?: "left" | "right" }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      style={dir === "left" ? { transform: "scaleX(-1)" } : undefined}
+      aria-hidden
+    >
+      <path d="m9.5 5 7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export function DownloadIcon({ size = 14 }: { size?: number }) {
   return (
     <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>

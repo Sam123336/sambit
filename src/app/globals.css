@@ -243,6 +243,50 @@ body::after {
   animation: fade-up 0.6s ease-out both;
 }
 
+/* registering the custom property is what lets the lens radius transition at all;
+   without @property a var() inside mask-image jumps instead of interpolating */
+@property --lens {
+  syntax: "<length>";
+  inherits: true; /* the lens layer is a child of the element the handler writes to */
+  initial-value: 0rem;
+}
+
+.blur-reveal {
+  touch-action: pan-y; /* vertical page scroll still wins over rubbing */
+  transition: --lens 220ms ease-out;
+}
+
+.blur-reveal-lens {
+  mask-image: radial-gradient(
+    circle var(--lens, 0rem) at var(--x, 50%) var(--y, 50%),
+    #000 55%,
+    transparent 100%
+  );
+}
+
+@keyframes guide-hop {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+.guide-hop {
+  animation: guide-hop 360ms ease-in-out 4;
+}
+
+/* the strip is scrolled by drag, wheel or the arrow buttons — the bar itself is noise */
+.phone-strip {
+  scrollbar-width: none;
+}
+
+.phone-strip::-webkit-scrollbar {
+  display: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
