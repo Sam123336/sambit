@@ -92,7 +92,7 @@ export default function WorkPage() {
             furtilo
           </h2>
           <span className="font-mono text-[11px] uppercase tracking-widest text-accent">
-            50,000+ users · 300+ signups a day
+            50,000+ users · 300+ signups  every day
           </span>
         </div>
         <p className="mt-3 max-w-lg text-sm text-foreground-muted">
