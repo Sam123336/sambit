@@ -8,13 +8,17 @@ import {
   ApiServerBody,
   DatabaseBody,
   RedisBody,
-  LoadBalancerBody,
+  PrismBody,
   QueueBody,
   ProviderBody,
   WorkerBody,
   ClientBody,
   GatewayBody,
+  ControlPlaneBody,
+  PipelineBody,
+  RepoBody,
 } from "./three/NodeBodies";
+import { useSimStore } from "@/store/simStore";
 import BrandLogo, { type BrandName } from "./three/BrandLogo";
 import type { SimNode as SimNodeType, NodeKind } from "./types";
 
@@ -36,11 +40,13 @@ function Plate({
   label,
   tone = "muted",
   brand,
+  sub,
   children,
 }: {
   label: string;
   tone?: Tone;
   brand?: BrandName;
+  sub?: string;
   children?: React.ReactNode;
 }) {
   return (
@@ -50,6 +56,7 @@ function Plate({
         {label}
         <StatusDot tone={tone} />
       </div>
+      {sub && <div className="mt-0.5 text-[9px] text-foreground-muted">{sub}</div>}
       {children}
     </div>
   );
@@ -86,14 +93,28 @@ function Assembly({
 
 function ServerNode({ id, data }: { id: string; data: SimNodeType["data"] }) {
   const { perServer } = useMetrics();
-  const m = perServer[id];
+  const down = !!data.down;
+  const m = down ? undefined : perServer[id];
   const building = data.buildStatus === "building";
-  const tone: Tone = !m ? "muted" : m.healthy ? "success" : m.utilization > 1.5 ? "critical" : "warning";
+  const tone: Tone = down ? "critical" : !m ? "muted" : m.healthy ? "success" : m.utilization > 1.5 ? "critical" : "warning";
   const bodyTone = tone === "critical" ? "crit" : tone === "warning" ? "warn" : "ok";
 
   return (
-    <Assembly critical={tone === "critical"} plate={
-      <Plate label={data.label} tone={building ? "warning" : tone} brand={data.containerized ? "docker" : "node"}>
+    <Assembly critical={tone === "critical" && !down} plate={
+      <Plate
+        label={data.label}
+        tone={building ? "warning" : tone}
+        brand={data.brand ?? (data.containerized ? "docker" : "node")}
+        sub={data.sub}
+      >
+        {down && (
+          <div className="mt-0.5 text-[9px] uppercase tracking-widest text-critical">
+            {data.restarts !== undefined ? "crashloopbackoff" : "offline"}
+          </div>
+        )}
+        {!!data.restarts && !down && (
+          <div className="mt-0.5 text-[9px] text-foreground-muted">restarts: {data.restarts}</div>
+        )}
         {m && !building && (
           <div className="mt-0.5 flex justify-center gap-2 text-[9px] text-foreground-muted">
             <span>
@@ -115,7 +136,29 @@ function ServerNode({ id, data }: { id: string; data: SimNodeType["data"] }) {
         )}
       </Plate>
     }>
-      <ApiServerBody tone={bodyTone} containerized={!!data.containerized} building={building} />
+      <ApiServerBody tone={bodyTone} containerized={!!data.containerized} building={building} down={down} />
+    </Assembly>
+  );
+}
+
+function PipelineNode({ data }: { data: SimNodeType["data"] }) {
+  const stages = useSimStore((s) => s.ciStages);
+  const failed = stages.some((st) => st.status === "fail");
+  const running = stages.some((st) => st.status === "run");
+  return (
+    <Assembly
+      w={170}
+      bodyH={80}
+      plate={
+        <Plate
+          label={data.label}
+          tone={failed ? "critical" : running ? "warning" : stages.every((st) => st.status === "pass") ? "success" : "muted"}
+          brand="githubactions"
+          sub={data.sub}
+        />
+      }
+    >
+      <PipelineBody stages={stages} />
     </Assembly>
   );
 }
@@ -153,7 +196,39 @@ export default function SimNode({ id, data }: NodeProps<SimNodeType>) {
         <Assembly w={120} bodyH={80} plate={<Plate label={data.label} tone="success" brand="elb">
           <div className="mt-0.5 text-[9px] text-foreground-muted">round-robin</div>
         </Plate>}>
-          <LoadBalancerBody />
+          <PrismBody />
+        </Assembly>
+      );
+    case "control-plane":
+      return (
+        <Assembly w={130} bodyH={80} hasTarget={false} plate={<Plate label={data.label} tone="success" brand="kubernetes" sub="watching desired state" />}>
+          <ControlPlaneBody />
+        </Assembly>
+      );
+    case "git":
+      return (
+        <Assembly w={110} bodyH={80} hasTarget={false} plate={<Plate label={data.label} tone="success" brand="git" sub={data.sub} />}>
+          <RepoBody />
+        </Assembly>
+      );
+    case "pipeline":
+      return <PipelineNode data={data} />;
+    case "sqs":
+      return (
+        <Assembly w={170} bodyH={80} plate={<Plate label={data.label} tone="success" brand="sqs" sub={data.sub ?? "at-least-once · visibility timeout"} />}>
+          <QueueBody brand="sqs" rgb="231,21,123" />
+        </Assembly>
+      );
+    case "dlq":
+      return (
+        <Assembly w={170} bodyH={80} hasSource={false} plate={<Plate label={data.label} tone="warning" brand="sqs" sub={data.sub ?? "quarantine"} />}>
+          <QueueBody brand="sqs" rgb="239,68,68" stalled />
+        </Assembly>
+      );
+    case "eventbus":
+      return (
+        <Assembly w={130} bodyH={80} plate={<Plate label={data.label} tone="success" brand="eventbridge" sub={data.sub ?? "rules"} />}>
+          <PrismBody rgb="231,21,123" brand="eventbridge" />
         </Assembly>
       );
     case "database":

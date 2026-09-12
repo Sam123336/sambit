@@ -11,6 +11,9 @@ const PRESETS = [
   "SELECT * FROM payments",
   "SELECT * FROM webhook_events",
   "SELECT * FROM cache_entries",
+  "SELECT * FROM deployments",
+  "SELECT * FROM queue_messages",
+  "SELECT * FROM events",
 ];
 
 export default function SqlPanel() {

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { useSimStore } from "@/store/simStore";
@@ -55,6 +56,35 @@ function LatencyBadge({ ms }: { ms: number }) {
   const tone = ms <= 150 ? "text-success" : ms <= 1000 ? "text-warning" : "text-critical";
   return (
     <span className={`ml-2 font-mono text-sm tabular-nums ${tone}`}>{ms.toLocaleString()}ms</span>
+  );
+}
+
+function Log({ lines }: { lines: string[] }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [lines]);
+  if (lines.length === 0) return null;
+  return (
+    <div ref={ref} className="mt-3 max-h-40 space-y-1 overflow-y-auto rounded-md border border-border bg-bg/70 p-2.5 font-mono text-[10px] leading-relaxed text-foreground-muted">
+      {lines.map((line, i) => (
+        <div
+          key={i}
+          className={
+            line.startsWith("✕") || line.startsWith("🔥")
+              ? "text-critical"
+              : line.startsWith("✓")
+                ? "text-success"
+                : line.startsWith("↻") || line.startsWith("⇢") || line.startsWith("⇠") || line.startsWith("+")
+                  ? "text-accent"
+                  : ""
+          }
+        >
+          {line}
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -275,15 +305,7 @@ function Mission6() {
           Provider retries the same webhook
         </ActionButton>
       )}
-      {log.length > 0 && (
-        <div className="mt-3 max-h-40 space-y-1 overflow-y-auto rounded-md border border-border bg-bg/70 p-2.5 font-mono text-[10px] leading-relaxed text-foreground-muted">
-          {log.map((line, i) => (
-            <div key={i} className={line.startsWith("✕") ? "text-critical" : line.startsWith("✓") ? "text-success" : ""}>
-              {line}
-            </div>
-          ))}
-        </div>
-      )}
+      <Log lines={log} />
       {phase === "resolved" && (
         <>
           <Banner tone="success">Idempotency key did its job — charged exactly once.</Banner>
@@ -325,17 +347,278 @@ function Mission7() {
             ⚡ 2,800ms → 92ms — API responds instantly while workers consume the queue.
           </Banner>
           <div className="mt-3 rounded-md border border-accent/30 bg-accent/5 p-3">
-            <p className="font-mono text-[10px] uppercase tracking-widest text-accent">Tour complete</p>
+            <p className="font-mono text-[10px] uppercase tracking-widest text-accent">Sambit · production story</p>
             <p className="mt-1.5 text-xs text-foreground-muted">
-              Everything you just used — Redis, RabbitMQ, webhooks, idempotency — runs in my production work at
+              Redis, RabbitMQ, webhooks, idempotency — this is the shape of the async pipeline I run in production at
               BelivMart.
             </p>
             <Link href="/work" className="mt-1.5 inline-block font-mono text-[10px] uppercase tracking-widest text-accent underline underline-offset-4">
               See the engineering stories →
             </Link>
           </div>
+          <ContinueButton />
         </>
       )}
+    </motion.div>
+  );
+}
+
+function Mission8() {
+  const phase = useSimStore((s) => s.m8Phase);
+  const log = useSimStore((s) => s.m8Log);
+  const pods = useSimStore((s) => s.nodes.filter((n) => n.data.kind === "server").length);
+  const killPod = useSimStore((s) => s.k8sKillPod);
+  const surge = useSimStore((s) => s.k8sSurge);
+  return (
+    <motion.div key="m8" {...fadeUp}>
+      <Objective>Containers are easy. Keeping them running at 3am is not.</Objective>
+      {(phase === "idle" || phase === "crashed") && (
+        <ActionButton primary onClick={killPod}>
+          💀 Kill a pod
+        </ActionButton>
+      )}
+      {phase === "crashed" && (
+        <Banner tone="critical">
+          Pod gone. The Service stopped routing to it — no user saw a 500.
+          <br />
+          The control plane is comparing actual state to desired state…
+        </Banner>
+      )}
+      {phase === "healed" && (
+        <>
+          <Banner tone="success">✓ Self-healed — desired replicas restored, nobody paged.</Banner>
+          <ActionButton primary onClick={surge}>
+            🔥 Send 10,000 Users
+          </ActionButton>
+          <ActionButton onClick={killPod}>Kill another</ActionButton>
+        </>
+      )}
+      {phase === "overloaded" && (
+        <Banner tone="warning">
+          CPU above the 70% target. The HPA is doing the math you used to do by hand…
+        </Banner>
+      )}
+      {phase === "scaled" && (
+        <>
+          <Banner tone="success">
+            ⚡ Autoscaled to {pods} pods — traffic absorbed without a deploy, a ticket, or a human.
+          </Banner>
+          <p className="mt-2 text-xs text-foreground-muted">
+            desired = ceil(replicas × currentCPU ÷ targetCPU), re-evaluated every control loop.
+          </p>
+          <ContinueButton />
+        </>
+      )}
+      <Log lines={log} />
+    </motion.div>
+  );
+}
+
+function Mission9() {
+  const phase = useSimStore((s) => s.m9Phase);
+  const log = useSimStore((s) => s.m9Log);
+  const stages = useSimStore((s) => s.ciStages);
+  const manual = useSimStore((s) => s.ciManualDeploy);
+  const push = useSimStore((s) => s.ciPush);
+  const running = stages.some((st) => st.status === "run");
+  return (
+    <motion.div key="m9" {...fadeUp}>
+      <Objective>Get code to production without praying.</Objective>
+      {phase === "idle" && (
+        <ActionButton primary onClick={manual}>
+          Deploy it by hand
+        </ActionButton>
+      )}
+      {phase === "broken" && (
+        <>
+          <Banner tone="critical">
+            You shipped straight to prod. No build, no tests, no rollback.
+          </Banner>
+          <p className="mt-2 text-xs text-foreground-muted">
+            Drag in the CI/CD Pipeline — the only path to prod from here on.
+          </p>
+        </>
+      )}
+      {phase !== "idle" && phase !== "broken" && (
+        <div className="mt-3 flex gap-1.5 font-mono text-[10px]">
+          {stages.map((st) => (
+            <span
+              key={st.name}
+              className={`rounded border px-1.5 py-0.5 uppercase tracking-widest ${
+                st.status === "pass"
+                  ? "border-success/40 bg-success/10 text-success"
+                  : st.status === "fail"
+                    ? "border-critical/40 bg-critical/10 text-critical"
+                    : st.status === "run"
+                      ? "border-warning/40 bg-warning/10 text-warning"
+                      : "border-border text-foreground-muted"
+              }`}
+            >
+              {st.name}
+            </span>
+          ))}
+        </div>
+      )}
+      {phase === "piped" && !running && (
+        <ActionButton primary onClick={() => push(false)}>
+          git push · the fix
+        </ActionButton>
+      )}
+      {phase === "green" && !running && (
+        <>
+          <Banner tone="success">✓ Green build shipped itself — same steps, every single time.</Banner>
+          <ActionButton primary onClick={() => push(true)}>
+            git push · a broken commit
+          </ActionButton>
+        </>
+      )}
+      {phase === "caught" && !running && (
+        <>
+          <Banner tone="success">
+            ✕ Tests failed → deploy never ran. Prod is still serving v1.4.2.
+            <br />
+            That failure cost 31 seconds instead of a 14-minute outage.
+          </Banner>
+          <p className="mt-2 font-mono text-[10px] text-foreground-muted">sql&gt; SELECT * FROM deployments</p>
+          <ActionButton onClick={() => push(false)}>Push a good commit again</ActionButton>
+          <ContinueButton />
+        </>
+      )}
+      <Log lines={log} />
+    </motion.div>
+  );
+}
+
+function Mission10() {
+  const phase = useSimStore((s) => s.m10Phase);
+  const msg = useSimStore((s) => s.m10Msg);
+  const log = useSimStore((s) => s.m10Log);
+  const send = useSimStore((s) => s.sqsSend);
+  const crash = useSimStore((s) => s.sqsCrashWorker);
+  return (
+    <motion.div key="m10" {...fadeUp}>
+      <Objective>A worker dies holding your message. Don&apos;t lose it — and don&apos;t loop forever.</Objective>
+      {phase === "idle" && (
+        <ActionButton primary onClick={send}>
+          Send order to the queue
+        </ActionButton>
+      )}
+      {msg && (
+        <div className="mt-2 font-mono text-xs text-foreground-muted">
+          msg_9c1 · receive_count
+          <span className={`ml-1.5 tabular-nums ${msg.receive_count >= 3 ? "text-critical" : "text-warning"}`}>
+            {msg.receive_count}
+          </span>
+          <span className="ml-2 rounded border border-border px-1.5 py-0.5 text-[9px] uppercase tracking-widest">
+            {msg.status}
+          </span>
+        </div>
+      )}
+      {phase !== "idle" && phase !== "resolved" && (
+        <ActionButton primary onClick={crash}>
+          💀 Worker crashes mid-message
+        </ActionButton>
+      )}
+      {phase === "inflight" && (
+        <Banner tone="info">In flight. The message is invisible to other consumers, not deleted.</Banner>
+      )}
+      {phase === "retrying" && (
+        <Banner tone="warning">
+          The visibility timeout expired and the message came back. At-least-once delivery: your consumer must be
+          idempotent — same lesson as the payment webhook.
+        </Banner>
+      )}
+      {phase === "poisoned" && (
+        <>
+          <Banner tone="critical">
+            ☠ Poison pill — 3 deliveries, 3 crashes, and it will keep coming back forever, burning a worker every
+            time.
+          </Banner>
+          <p className="mt-2 text-xs text-foreground-muted">
+            Drag in a Dead Letter Queue, then crash the worker once more.
+          </p>
+        </>
+      )}
+      {phase === "resolved" && (
+        <>
+          <Banner tone="success">
+            ✓ Redrive policy fired — the bad message sits in orders-dlq for a human, the queue keeps flowing.
+          </Banner>
+          <p className="mt-2 font-mono text-[10px] text-foreground-muted">sql&gt; SELECT * FROM queue_messages</p>
+          <ContinueButton />
+        </>
+      )}
+      <Log lines={log} />
+    </motion.div>
+  );
+}
+
+function Mission11() {
+  const phase = useSimStore((s) => s.m11Phase);
+  const rules = useSimStore((s) => s.m11Rules);
+  const log = useSimStore((s) => s.m11Log);
+  const direct = useSimStore((s) => s.ebDirectCall);
+  const publish = useSimStore((s) => s.ebPublish);
+  const addConsumer = useSimStore((s) => s.ebAddConsumer);
+  return (
+    <motion.div key="m11" {...fadeUp}>
+      <Objective>Three services need to know about every order. Stop calling them.</Objective>
+      {(phase === "idle" || phase === "coupled") && (
+        <ActionButton primary onClick={direct}>
+          Place an order
+        </ActionButton>
+      )}
+      {phase === "coupled" && (
+        <>
+          <Banner tone="critical">
+            One slow consumer took checkout down with it. Every new consumer is another deploy of the order service.
+          </Banner>
+          <p className="mt-2 text-xs text-foreground-muted">Drag in the EventBridge Bus.</p>
+        </>
+      )}
+      {(phase === "bussed" || phase === "published" || phase === "resolved") && (
+        <>
+          <ActionButton primary onClick={publish}>
+            Publish order.placed
+          </ActionButton>
+          <div className="mt-3 space-y-1 rounded-md border border-border bg-bg/70 p-2.5 font-mono text-[10px] text-foreground-muted">
+            {rules.map((r) => (
+              <div key={r.name}>
+                <span className="text-accent">{r.name}</span> · {r.source} / {r.detailType} → {r.targets.length} target
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+      {phase === "published" && (
+        <>
+          <Banner tone="success">
+            ⚡ One PutEvents call, {rules.length} rules matched, 3 targets delivered — the API never learned their names.
+          </Banner>
+          <ActionButton primary onClick={addConsumer}>
+            Marketing wants loyalty points
+          </ActionButton>
+        </>
+      )}
+      {phase === "resolved" && (
+        <>
+          <Banner tone="success">
+            ✓ New consumer added as a rule. Zero producer changes, zero deploys, zero downtime.
+          </Banner>
+          <div className="mt-3 rounded-md border border-accent/30 bg-accent/5 p-3">
+            <p className="font-mono text-[10px] uppercase tracking-widest text-accent">Tour complete · 11 missions</p>
+            <p className="mt-1.5 text-xs text-foreground-muted">
+              Load balancing, Docker, VPCs, Redis, WebSockets, payments, RabbitMQ, Kubernetes, CI/CD, SQS and
+              EventBridge — the same stack I build and operate in production.
+            </p>
+            <Link href="/work" className="mt-1.5 inline-block font-mono text-[10px] uppercase tracking-widest text-accent underline underline-offset-4">
+              See the engineering stories →
+            </Link>
+          </div>
+          <p className="mt-2 font-mono text-[10px] text-foreground-muted">sql&gt; SELECT * FROM events</p>
+        </>
+      )}
+      <Log lines={log} />
     </motion.div>
   );
 }
@@ -348,6 +631,10 @@ const PANELS: Record<number, () => React.ReactNode> = {
   5: Mission5,
   6: Mission6,
   7: Mission7,
+  8: Mission8,
+  9: Mission9,
+  10: Mission10,
+  11: Mission11,
 };
 
 export default function MissionPanel() {
@@ -359,7 +646,9 @@ export default function MissionPanel() {
   return (
     <div className="node-3d pointer-events-auto absolute left-3 top-3 z-30 max-h-[55dvh] w-[calc(100%-1.5rem)] max-w-80 overflow-y-auto rounded-xl border border-border p-4 backdrop-blur sm:left-4 sm:top-4">
       <div className="flex items-baseline justify-between">
-        <p className="font-mono text-[10px] uppercase tracking-widest text-accent">Mission 0{mission}</p>
+        <p className="font-mono text-[10px] uppercase tracking-widest text-accent">
+          Mission {String(mission).padStart(2, "0")}
+        </p>
         <button
           onClick={() => setPicker(true)}
           className="cursor-pointer font-mono text-[10px] uppercase tracking-widest text-foreground-muted hover:text-accent lg:hidden"

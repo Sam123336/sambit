@@ -13,7 +13,8 @@ export function useMetrics() {
   const traffic = useSimStore((s) => s.traffic);
 
   return useMemo(() => {
-    const servers = nodes.filter((n) => n.data.kind === "server");
+    // crashed pods are pulled from the pool — traffic only splits across healthy ones
+    const servers = nodes.filter((n) => n.data.kind === "server" && !n.data.down);
     const routed = nodes.some((n) => n.data.kind === "loadbalancer");
     const loads = distributeTraffic(traffic, servers.length, routed);
     const perServer: Record<string, ServerMetrics> = {};

@@ -27,6 +27,7 @@ jobs:
         run: |
           npx tsx src/lib/sim/engine.selfcheck.ts
           npx tsx src/lib/sim/sql.selfcheck.ts
+          npx tsx src/lib/sim/cloud.selfcheck.ts
       - name: Build
         run: npm run build
 

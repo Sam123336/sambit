@@ -1,9 +1,9 @@
 # sambit-portfolio
 
 Interactive backend-systems portfolio. The playground at `/play` is a working simulator —
-seven guided missions (load balancing, Docker, VPC, Redis, WebSockets, payments/webhooks,
-RabbitMQ) plus a SQL console over an in-memory database, rendered as a CSS-3D scene on
-React Flow with GSAP animation.
+eleven guided missions (load balancing, Docker, VPC, Redis, WebSockets, payments/webhooks,
+RabbitMQ, Kubernetes, CI/CD, SQS + dead letters, EventBridge) plus a SQL console over an
+in-memory database, rendered as a CSS-3D scene on React Flow with GSAP animation.
 
 ## Develop
 
@@ -19,6 +19,7 @@ npx eslint .
 npx tsc --noEmit
 npx tsx src/lib/sim/engine.selfcheck.ts
 npx tsx src/lib/sim/sql.selfcheck.ts
+npx tsx src/lib/sim/cloud.selfcheck.ts
 npm run build
 ```
 

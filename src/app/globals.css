@@ -160,6 +160,40 @@ body::after {
   filter: drop-shadow(0 0 4px rgba(251, 146, 60, 0.3));
 }
 
+/* Kubernetes control-plane edges: quiet blue, this is watching not serving */
+.react-flow__edge.control-edge .react-flow__edge-path {
+  stroke: rgba(50, 108, 229, 0.45);
+  stroke-dasharray: 2 6;
+  filter: drop-shadow(0 0 4px rgba(50, 108, 229, 0.3));
+}
+
+/* Hand-rolled deploy path: no gates, no glow, just a rope to prod */
+.react-flow__edge.manual-edge .react-flow__edge-path {
+  stroke: rgba(239, 68, 68, 0.45);
+  stroke-dasharray: 5 5;
+  filter: none;
+}
+
+/* Pipeline path: green, the only sanctioned way into prod */
+.react-flow__edge.deploy-edge .react-flow__edge-path {
+  stroke: rgba(34, 197, 94, 0.5);
+  filter: drop-shadow(0 0 4px rgba(34, 197, 94, 0.3));
+}
+
+/* EventBridge: AWS application-integration pink */
+.react-flow__edge.event-edge .react-flow__edge-path {
+  stroke: rgba(231, 21, 123, 0.55);
+  filter: drop-shadow(0 0 4px rgba(231, 21, 123, 0.35));
+}
+
+/* Dead-letter path: static, because nothing should be flowing down it */
+.react-flow__edge.dlq-edge .react-flow__edge-path {
+  stroke: rgba(239, 68, 68, 0.4);
+  stroke-dasharray: 3 6;
+  animation: none;
+  filter: none;
+}
+
 /* Critical node pulse ring */
 @keyframes pulse-ring {
   0%,

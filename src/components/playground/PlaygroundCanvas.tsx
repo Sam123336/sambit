@@ -1,11 +1,13 @@
 "use client";
 
+import { useEffect } from "react";
 import {
   ReactFlow,
   ReactFlowProvider,
   Background,
   BackgroundVariant,
   Controls,
+  useReactFlow,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useSimStore } from "@/store/simStore";
@@ -28,6 +30,14 @@ function Inner({ trayItems }: { trayItems: TrayItem[] }) {
   const onEdgesChange = useSimStore((s) => s.onEdgesChange);
   const packets = useSimStore((s) => s.packets);
   const addNode = useSimStore((s) => s.addNode);
+
+  // autoscaled pods and new consumers land outside the framed view — follow them
+  const { fitView } = useReactFlow();
+  const nodeCount = nodes.length;
+  useEffect(() => {
+    const t = setTimeout(() => fitView({ padding: 0.3, maxZoom: 1, duration: 500 }), 140);
+    return () => clearTimeout(t);
+  }, [nodeCount, fitView]);
 
   return (
     <div

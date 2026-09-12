@@ -8,9 +8,20 @@ export interface SimDb {
   payments: Row[];
   cache_entries: Row[];
   webhook_events: Row[];
+  deployments: Row[];
+  queue_messages: Row[];
+  events: Row[];
 }
 
-export const TABLE_NAMES = ["orders", "payments", "cache_entries", "webhook_events"] as const;
+export const TABLE_NAMES = [
+  "orders",
+  "payments",
+  "cache_entries",
+  "webhook_events",
+  "deployments",
+  "queue_messages",
+  "events",
+] as const;
 
 export function createSimDb(): SimDb {
   return {
@@ -22,5 +33,8 @@ export function createSimDb(): SimDb {
     payments: [],
     cache_entries: [],
     webhook_events: [],
+    deployments: [{ id: 1, commit: "a41c0de", message: "bump copy", stage: "deploy", status: "deployed", duration_s: 74 }],
+    queue_messages: [],
+    events: [],
   };
 }

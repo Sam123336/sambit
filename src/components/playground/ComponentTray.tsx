@@ -9,6 +9,10 @@ const TRAY_BRAND: Partial<Record<NodeKind, BrandName>> = {
   loadbalancer: "elb",
   redis: "redis",
   rabbitmq: "rabbitmq",
+  pipeline: "githubactions",
+  sqs: "sqs",
+  dlq: "sqs",
+  eventbus: "eventbridge",
 };
 
 export default function ComponentTray({

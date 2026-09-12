@@ -114,10 +114,12 @@ export function ApiServerBody({
   tone,
   containerized,
   building,
+  down,
 }: {
   tone: "ok" | "warn" | "crit";
   containerized: boolean;
   building: boolean;
+  down?: boolean;
 }) {
   const glassRef = useRef<HTMLDivElement>(null);
 
@@ -140,10 +142,18 @@ export function ApiServerBody({
   }, [containerized, building]);
 
   return (
-    <div className="relative" style={{ transformStyle: "preserve-3d" }}>
+    <div
+      className="relative"
+      style={{
+        transformStyle: "preserve-3d",
+        opacity: down ? 0.35 : 1,
+        filter: down ? "grayscale(1)" : undefined,
+        transition: "opacity 0.4s ease, filter 0.4s ease",
+      }}
+    >
       <div className="flex flex-col" style={{ transformStyle: "preserve-3d", gap: 4 }}>
-        <RackSlab tone={building ? "warn" : tone} />
-        <RackSlab tone={building ? "off" : tone} />
+        <RackSlab tone={down ? "off" : building ? "warn" : tone} />
+        <RackSlab tone={down || building ? "off" : tone} />
       </div>
       {(containerized || building) && (
         <div
@@ -200,8 +210,14 @@ export function RedisBody() {
   );
 }
 
-/** Load balancer: slowly spinning glass prism. */
-export function LoadBalancerBody() {
+/** Spinning glass prism — load balancer, and the EventBridge bus in pink. */
+export function PrismBody({
+  rgb = "140,79,255",
+  brand = "elb",
+}: {
+  rgb?: string;
+  brand?: Parameters<typeof BrandLogo>[0]["name"];
+} = {}) {
   const spinRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!spinRef.current || reducedMotion()) return;
@@ -210,11 +226,11 @@ export function LoadBalancerBody() {
       t.kill();
     };
   }, []);
-  // ELB console color, so the prism reads as AWS load balancing
-  const glass = (bg: string) => ({
-    background: bg,
-    border: "1px solid rgba(140,79,255,0.55)",
-    boxShadow: "inset 0 0 14px rgba(140,79,255,0.22)",
+  // AWS console color, so the prism reads as the service it stands for
+  const glass = (alpha: number) => ({
+    background: `rgba(${rgb},${alpha})`,
+    border: `1px solid rgba(${rgb},0.55)`,
+    boxShadow: `inset 0 0 14px rgba(${rgb},0.22)`,
   });
   return (
     <div className="relative" style={{ transformStyle: "preserve-3d" }}>
@@ -224,26 +240,36 @@ export function LoadBalancerBody() {
           h={40}
           d={40}
           faces={{
-            front: { style: glass("rgba(140,79,255,0.16)") },
-            back: { style: glass("rgba(140,79,255,0.10)") },
-            left: { style: glass("rgba(140,79,255,0.08)") },
-            right: { style: glass("rgba(140,79,255,0.08)") },
-            top: { style: glass("rgba(140,79,255,0.22)") },
-            bottom: { style: glass("rgba(140,79,255,0.05)") },
+            front: { style: glass(0.16) },
+            back: { style: glass(0.1) },
+            left: { style: glass(0.08) },
+            right: { style: glass(0.08) },
+            top: { style: glass(0.22) },
+            bottom: { style: glass(0.05) },
           }}
         />
       </div>
-      <FloatingBrand name="elb" size={20} y={0} />
+      <FloatingBrand name={brand} size={20} y={0} />
     </div>
   );
 }
 
-/** RabbitMQ: conveyor rail with message cubes marching along it. */
-export function QueueBody() {
+/** Message queue: conveyor rail with message cubes marching along it. */
+export function QueueBody({
+  brand = "rabbitmq",
+  rgb = "251,146,60",
+  stalled = false,
+}: {
+  brand?: Parameters<typeof BrandLogo>[0]["name"];
+  /** accent channel for the belt and cubes */
+  rgb?: string;
+  /** dead-letter queues hold messages instead of moving them */
+  stalled?: boolean;
+} = {}) {
   const beltRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const belt = beltRef.current;
-    if (!belt || reducedMotion()) return;
+    if (!belt || reducedMotion() || stalled) return;
     const cubes = Array.from(belt.children);
     const tweens = cubes.map((cube, i) =>
       gsap.fromTo(
@@ -261,9 +287,9 @@ export function QueueBody() {
       ),
     );
     return () => tweens.forEach((t) => t.kill());
-  }, []);
+  }, [stalled]);
 
-  const orange = (a: number) => `rgba(251,146,60,${a})`;
+  const orange = (a: number) => `rgba(${rgb},${a})`;
   return (
     <div className="relative" style={{ transformStyle: "preserve-3d" }}>
       <Cuboid
@@ -273,13 +299,12 @@ export function QueueBody() {
         faces={{
           top: {
             style: {
-              background:
-                "repeating-linear-gradient(90deg, rgba(251,146,60,0.25) 0px, rgba(30,24,18,0.95) 2px, rgba(16,13,10,0.98) 12px)",
+              background: `repeating-linear-gradient(90deg, rgba(${rgb},0.25) 0px, rgba(30,24,18,0.95) 2px, rgba(16,13,10,0.98) 12px)`,
             },
           },
         }}
       />
-      <FloatingBrand name="rabbitmq" size={18} y={-30} />
+      <FloatingBrand name={brand} size={18} y={-30} />
       <div
         ref={beltRef}
         className="absolute left-0"
@@ -287,7 +312,11 @@ export function QueueBody() {
         aria-hidden
       >
         {[0, 1, 2].map((i) => (
-          <div key={i} className="absolute" style={{ transformStyle: "preserve-3d" }}>
+          <div
+            key={i}
+            className="absolute"
+            style={{ transformStyle: "preserve-3d", ...(stalled ? { transform: `translateX(${20 + i * 18}px)` } : null) }}
+          >
             <Cuboid
               w={12}
               h={12}
@@ -401,6 +430,128 @@ export function GatewayBody() {
           faces={{ top: { style: { background: "linear-gradient(135deg, rgba(139,92,246,0.22), rgba(15,18,26,0.98) 60%)" } } }}
         />
       </div>
+    </div>
+  );
+}
+
+/** Kubernetes control plane: the box that keeps watching, on a kube-blue plinth. */
+export function ControlPlaneBody() {
+  const KUBE = "50,108,229";
+  return (
+    <div className="relative" style={{ transformStyle: "preserve-3d" }}>
+      <Cuboid
+        w={72}
+        h={34}
+        d={52}
+        faces={{
+          front: {
+            className: "flex items-center justify-center gap-1.5",
+            style: {
+              background: `linear-gradient(165deg, rgba(${KUBE},0.22) 0%, rgba(8,12,24,0.96) 70%)`,
+              border: `1px solid rgba(${KUBE},0.5)`,
+            },
+            children: <Leds tone="ok" />,
+          },
+          top: { style: { background: `linear-gradient(135deg, rgba(${KUBE},0.35), rgba(10,14,26,0.98) 65%)` } },
+        }}
+      />
+      {/* api-server · scheduler · etcd, the control loops that do the healing */}
+      <div className="absolute left-1/2 flex gap-1.5" style={{ top: -14, transform: "translateX(-50%)", transformStyle: "preserve-3d" }} aria-hidden>
+        {[0, 1, 2].map((i) => (
+          <Cuboid
+            key={i}
+            w={12}
+            h={12}
+            d={12}
+            faces={{
+              top: { style: { background: `rgba(${KUBE},0.45)`, border: `1px solid rgba(${KUBE},0.6)` } },
+              front: { style: { background: `rgba(${KUBE},0.2)`, border: `1px solid rgba(${KUBE},0.5)` } },
+            }}
+          />
+        ))}
+      </div>
+      <FloatingBrand name="kubernetes" size={20} y={-4} />
+    </div>
+  );
+}
+
+export type StageStatus = "idle" | "run" | "pass" | "fail";
+
+const STAGE_RGB: Record<StageStatus, string> = {
+  idle: "120,130,150",
+  run: "245,158,11",
+  pass: "34,197,94",
+  fail: "239,68,68",
+};
+
+/** CI/CD pipeline: three stage blocks that light up in order as the run progresses. */
+export function PipelineBody({ stages }: { stages: { name: string; status: StageStatus }[] }) {
+  const runningRef = useRef<HTMLDivElement>(null);
+  const runningIndex = stages.findIndex((s) => s.status === "run");
+
+  useEffect(() => {
+    const el = runningRef.current;
+    if (!el || runningIndex < 0 || reducedMotion()) return;
+    const t = gsap.to(el, { opacity: 0.4, duration: 0.45, repeat: -1, yoyo: true, ease: "sine.inOut" });
+    return () => {
+      gsap.set(el, { opacity: 1 });
+      t.kill();
+    };
+  }, [runningIndex]);
+
+  return (
+    <div className="relative flex items-center" style={{ transformStyle: "preserve-3d", gap: 8 }}>
+      {stages.map((stage, i) => {
+        const rgb = STAGE_RGB[stage.status];
+        return (
+          <div
+            key={stage.name}
+            ref={i === runningIndex ? runningRef : undefined}
+            style={{ transformStyle: "preserve-3d" }}
+          >
+            <Cuboid
+              w={30}
+              h={28}
+              d={30}
+              faces={{
+                front: {
+                  className: "flex items-center justify-center",
+                  style: {
+                    background: `linear-gradient(165deg, rgba(${rgb},0.28) 0%, rgba(10,12,18,0.96) 75%)`,
+                    border: `1px solid rgba(${rgb},0.55)`,
+                  },
+                  children: (
+                    <span
+                      className="font-mono text-[9px] uppercase"
+                      style={{ color: `rgb(${rgb})`, textShadow: `0 0 8px rgba(${rgb},0.8)` }}
+                    >
+                      {stage.status === "pass" ? "✓" : stage.status === "fail" ? "✕" : stage.name[0]}
+                    </span>
+                  ),
+                },
+                top: { style: { background: `linear-gradient(135deg, rgba(${rgb},0.4), rgba(12,14,20,0.98) 70%)` } },
+              }}
+            />
+          </div>
+        );
+      })}
+      <FloatingBrand name="githubactions" size={17} y={-28} />
+    </div>
+  );
+}
+
+/** Git repository: a stack of commits with the git mark out front. */
+export function RepoBody() {
+  const GIT = "240,60,46";
+  return (
+    <div className="relative" style={{ transformStyle: "preserve-3d" }}>
+      <Cylinder
+        r={24}
+        h={40}
+        bands={`repeating-linear-gradient(180deg, rgba(${GIT},0.3) 0px, rgba(40,18,16,0.95) 3px, rgba(18,12,12,0.98) 13px)`}
+        capBackground={`radial-gradient(circle at 35% 35%, rgba(${GIT},0.45), rgba(30,14,12,0.98) 72%)`}
+      />
+      <FloatingBrand name="git" size={18} y={-16} />
     </div>
   );
 }

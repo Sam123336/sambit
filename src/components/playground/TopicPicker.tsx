@@ -20,9 +20,9 @@ export default function TopicPicker() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.25 }}
-          className="absolute inset-0 z-50 flex items-center justify-center bg-bg/80 p-6 backdrop-blur-md"
+          className="absolute inset-0 z-50 flex items-center justify-center overflow-y-auto bg-bg/80 p-6 backdrop-blur-md"
         >
-          <div className="w-full max-w-2xl">
+          <div className="my-auto w-full max-w-2xl lg:max-w-4xl">
             <div className="flex items-baseline justify-between">
               <div>
                 <p className="font-mono text-[10px] uppercase tracking-widest text-accent">Interactive playground</p>
@@ -36,13 +36,13 @@ export default function TopicPicker() {
               </button>
             </div>
 
-            <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {TOPICS.map((topic, i) => (
                 <motion.button
                   key={topic.key}
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.05 * i, duration: 0.3, ease: "easeOut" }}
+                  transition={{ delay: 0.03 * i, duration: 0.3, ease: "easeOut" }}
                   onClick={() => {
                     if (topic.mission) setMission(topic.mission);
                     if (topic.sql && !sqlOpen) toggleSql();
@@ -63,7 +63,7 @@ export default function TopicPicker() {
             </div>
 
             <p className="mt-5 text-center font-mono text-[10px] uppercase tracking-widest text-foreground-muted">
-              or follow the guided tour, mission 01 → 07
+              or follow the guided tour, mission 01 → 11
             </p>
           </div>
         </motion.div>

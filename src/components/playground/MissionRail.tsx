@@ -21,7 +21,7 @@ export default function MissionRail() {
         return (
           <button
             key={m.n}
-            title={`0${m.n} — ${m.title}`}
+            title={`${String(m.n).padStart(2, "0")} — ${m.title}`}
             disabled={!unlocked}
             onClick={() => setMission(m.n as Mission)}
             className={`h-7 w-7 cursor-pointer rounded-full font-mono text-[10px] transition-all ${

@@ -12,7 +12,13 @@ export type NodeKind =
   | "gateway"
   | "vpc"
   | "subnet-public"
-  | "subnet-private";
+  | "subnet-private"
+  | "control-plane"
+  | "git"
+  | "pipeline"
+  | "sqs"
+  | "dlq"
+  | "eventbus";
 
 export interface SimNodeData extends Record<string, unknown> {
   kind: NodeKind;
@@ -23,6 +29,14 @@ export interface SimNodeData extends Record<string, unknown> {
   locked?: boolean;
   /** worker accent hue, provider flags, etc. */
   hue?: string;
+  /** overrides the plate brand mark (e.g. a server rendered as a k8s pod) */
+  brand?: BrandName;
+  /** small caption under the label on the plate */
+  sub?: string;
+  /** crashed / unschedulable: takes no traffic until the control plane heals it */
+  down?: boolean;
+  /** kubelet restart count shown on a pod */
+  restarts?: number;
 }
 
 export type SimNode = Node<SimNodeData>;
@@ -35,6 +49,9 @@ export type PacketVariant =
   | "ws"
   | "webhook"
   | "queue"
+  | "event"
+  | "control"
+  | "deploy"
   | "blocked";
 
 export interface PacketBurst {
@@ -61,6 +78,10 @@ export const MISSIONS = [
   { n: 5, title: "Make it realtime" },
   { n: 6, title: "Process a payment" },
   { n: 7, title: "Decouple the system" },
+  { n: 8, title: "Orchestrate the fleet" },
+  { n: 9, title: "Ship it safely" },
+  { n: 10, title: "Survive a bad message" },
+  { n: 11, title: "Broadcast, don't call" },
 ] as const;
 
 import type { BrandName } from "./three/BrandLogo";
@@ -71,7 +92,7 @@ export interface Topic {
   brand: BrandName;
   title: string;
   desc: string;
-  mission?: 1 | 2 | 3 | 4 | 5 | 6 | 7;
+  mission?: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
   sql?: boolean;
 }
 
@@ -83,6 +104,10 @@ export const TOPICS: Topic[] = [
   { key: "ws", tag: "WSS", brand: "socketio", title: "WebSockets & Realtime", desc: "Kill polling with a persistent push tether.", mission: 5 },
   { key: "payments", tag: "API", brand: "razorpay", title: "Payments, Webhooks & Idempotency", desc: "3rd-party APIs, webhooks back, charge exactly once.", mission: 6 },
   { key: "rabbitmq", tag: "MQ", brand: "rabbitmq", title: "RabbitMQ & Async Work", desc: "Decouple a 2.8s request down to 92ms.", mission: 7 },
+  { key: "k8s", tag: "K8S", brand: "kubernetes", title: "Kubernetes & Self-Healing", desc: "Kill a pod. Watch the cluster fix itself, then autoscale.", mission: 8 },
+  { key: "cicd", tag: "CI/CD", brand: "githubactions", title: "CI/CD Pipelines", desc: "Hand-deploy and break prod. Then let the pipeline catch it.", mission: 9 },
+  { key: "sqs", tag: "SQS", brand: "sqs", title: "SQS, Retries & Dead Letters", desc: "A worker dies mid-message. Where does the message go?", mission: 10 },
+  { key: "eventbridge", tag: "EVT", brand: "eventbridge", title: "EventBridge & Event-Driven", desc: "Publish once, fan out to many — add a consumer with zero deploys.", mission: 11 },
   { key: "sql", tag: "SQL", brand: "postgres", title: "SQL Query Playground", desc: "Query the live simulation database, psql-style.", sql: true },
 ];
 
@@ -99,4 +124,7 @@ export const TRAY_BY_MISSION: Record<number, TrayItem[]> = {
   ],
   4: [{ kind: "redis", label: "Redis", hint: "In-memory cache" }],
   7: [{ kind: "rabbitmq", label: "RabbitMQ", hint: "Message broker + workers" }],
+  9: [{ kind: "pipeline", label: "CI/CD Pipeline", hint: "build → test → deploy" }],
+  10: [{ kind: "dlq", label: "Dead Letter Queue", hint: "Catches poison messages" }],
+  11: [{ kind: "eventbus", label: "EventBridge Bus", hint: "Rules fan out to targets" }],
 };

@@ -12,6 +12,9 @@ const VARIANT_COLOR: Record<PacketVariant, string> = {
   ws: "var(--color-accent-2)",
   webhook: "#fbbf24",
   queue: "#fb923c",
+  event: "#e7157b",
+  control: "#326ce5",
+  deploy: "var(--color-success)",
   blocked: "var(--color-critical)",
 };
 
