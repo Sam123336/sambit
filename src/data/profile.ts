@@ -153,7 +153,7 @@ export const workStories: WorkStory[] = [
 export const experience = [
   {
     role: "Full Stack Developer",
-    org: "Kuvi Technomart LLP",
+    org: "Kuvi Technologies Pvt Ltd",
     period: "Jun 2026 — Present",
     bullets: [
       "Develop and maintain backend services and REST APIs (NestJS, Node.js, PostgreSQL, Redis) for Belivmart, a hyperlocal delivery platform live in 10+ cities.",
