@@ -5,15 +5,33 @@ import Image from "next/image";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ChevronIcon } from "@/components/icons";
+import DeviceFrame from "@/components/fx/DeviceFrame";
 
-export default function PhoneStrip({
-  shots,
-}: {
-  shots: readonly (readonly [string, string])[];
-}) {
+// poster: a finished marketing frame that already contains its own device, so no bezel
+type Kind = "phone" | "tablet" | "laptop" | "poster";
+export type Shot = readonly [src: string, caption: string, kind?: Kind];
+
+// widths tuned so a laptop, a tablet and a phone in one row stand equally tall from sm up
+const WIDTH: Record<Kind, string> = {
+  laptop: "w-[20rem] sm:w-[28rem] lg:w-[32rem]",
+  tablet: "w-[15.5rem] sm:w-[22rem] lg:w-[25rem]",
+  phone: "w-[8.3rem] lg:w-[9.5rem]",
+  poster: "w-44 sm:w-56 lg:w-64",
+};
+// phones with nothing bigger beside them get room to be read
+const PHONE_ALONE = "w-44 sm:w-56 lg:w-64";
+const SIZES: Record<Kind, string> = {
+  laptop: "(min-width: 1024px) 32rem, (min-width: 640px) 28rem, 20rem",
+  tablet: "(min-width: 1024px) 25rem, (min-width: 640px) 22rem, 16rem",
+  phone: "(min-width: 1024px) 16rem, (min-width: 640px) 14rem, 11rem",
+  poster: "(min-width: 1024px) 16rem, (min-width: 640px) 14rem, 11rem",
+};
+
+export default function DeviceStrip({ shots }: { shots: readonly Shot[] }) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const [canLeft, setCanLeft] = useState(false);
   const [canRight, setCanRight] = useState(true);
+  const phonesAlone = shots.every(([, , kind = "phone"]) => kind === "phone");
 
   const syncEdges = useCallback(() => {
     const el = viewportRef.current;
@@ -30,7 +48,7 @@ export default function PhoneStrip({
 
     gsap.registerPlugin(ScrollTrigger);
     const ctx = gsap.context(() => {
-      gsap.from(".phone-card", {
+      gsap.from(".device-card", {
         opacity: 0,
         y: 40,
         duration: 0.6,
@@ -46,11 +64,10 @@ export default function PhoneStrip({
   const step = (dir: 1 | -1) => {
     const el = viewportRef.current;
     if (!el) return;
-    const card = el.querySelector(".phone-card");
-    const by = card ? card.getBoundingClientRect().width + 20 : el.clientWidth * 0.8;
-    // native smooth scroll, not a gsap scrollLeft tween: scroll-snap overrides the
-    // tween's intermediate positions and the motion lands as a jump
-    el.scrollBy({ left: dir * by, behavior: "smooth" });
+    // most of a viewport at a time; scroll-snap settles it on a card. Native smooth scroll,
+    // not a gsap scrollLeft tween: scroll-snap overrides the tween's intermediate positions
+    // and the motion lands as a jump
+    el.scrollBy({ left: dir * el.clientWidth * 0.8, behavior: "smooth" });
   };
 
   // fade only the side that actually has more content, so a resting strip has no ghost edge
@@ -77,21 +94,30 @@ export default function PhoneStrip({
       <div
         ref={viewportRef}
         onScroll={syncEdges}
-        className="phone-strip -mx-6 snap-x snap-mandatory scroll-pl-6 overflow-x-auto pb-2 md:-mx-12 md:scroll-pl-12"
+        className="device-strip -mx-6 snap-x snap-mandatory scroll-pl-6 overflow-x-auto pb-2 md:-mx-12 md:scroll-pl-12"
         style={{ maskImage: mask, WebkitMaskImage: mask }}
       >
-        <div className="flex w-max gap-5 px-6 md:px-12">
-          {shots.map(([src, caption]) => (
-            <figure key={src} className="phone-card w-44 shrink-0 snap-start sm:w-56 lg:w-64">
-              <span className="relative block aspect-[9/19] w-full overflow-hidden rounded-2xl border border-border bg-bg-elevated">
-                <Image
-                  src={src}
-                  alt={caption}
-                  fill
-                  sizes="(min-width: 1024px) 16rem, (min-width: 640px) 14rem, 11rem"
-                  className="object-cover object-top"
-                />
-              </span>
+        <div className="flex w-max items-start gap-5 px-6 md:px-12">
+          {shots.map(([src, caption, kind = "phone"]) => (
+            <figure
+              key={src}
+              className={`device-card shrink-0 snap-start ${kind === "phone" && phonesAlone ? PHONE_ALONE : WIDTH[kind]}`}
+            >
+              {kind === "poster" ? (
+                <div className="relative aspect-[9/16] overflow-hidden rounded-2xl border border-border bg-bg-elevated">
+                  <Image src={src} alt={caption} fill sizes={SIZES[kind]} className="object-cover" />
+                </div>
+              ) : (
+                <DeviceFrame kind={kind}>
+                  <Image
+                    src={src}
+                    alt={caption}
+                    fill
+                    sizes={SIZES[kind]}
+                    className="object-cover object-top"
+                  />
+                </DeviceFrame>
+              )}
               <figcaption className="mt-3 text-[11px] leading-snug text-foreground-muted">
                 {caption}
               </figcaption>

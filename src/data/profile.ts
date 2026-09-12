@@ -121,6 +121,33 @@ export const workStories: WorkStory[] = [
       },
     ],
   },
+  {
+    id: "ratroo",
+    number: "05",
+    title: "Ratroo",
+    stat: "operator → verify → ingest",
+    context: "Side project · NestJS · PostGIS · BullMQ · Flutter",
+    summary:
+      "Google Maps doesn't always know the bus route that actually exists. The interesting part isn't the UI — it's how a route gets in.",
+    sections: [
+      {
+        heading: "The problem",
+        body: "Take Bidadi → KR Market. There are direct BMTC services on that corridor — one route alone has 46 stops — and Google Maps won't show you one. Across India, thousands of buses, shared autos, taxis and informal services are hard to discover digitally because their route data is fragmented, outdated, or was never published in a standard format at all. So I built a journey planner for bus, metro, rail, ferry, auto and shared taxi: Next.js on the web, a Flutter app, one transit data platform behind both.",
+      },
+      {
+        heading: "How a route gets in",
+        body: "Every source feeds one pipeline — fetch → parse → validate → map → canonical model. Public transport feeds, OpenStreetMap, Nominatim, data.gov.in, Census India, and the operators themselves. Someone running a shared taxi from village to station to market adds the route from their phone, ops verifies it, and it's in the planner. Operator-submitted isn't a special code path: it implements the same provider interface as a transport scraper. The scraper reads HTTP, the operator adapter reads Postgres, and everything after that is identical.",
+      },
+      {
+        heading: "What was surprisingly hard",
+        body: "Duplicate ingestion: a cron retry must not import the same network twice, so BullMQ job ids are trigger:provider:date — same provider, same cycle, same job. Stop deduplication: stop names aren't unique in India, so stops are matched geographically with PostGIS ST_DWithin over GiST indexes instead of by string. Timetables: if a source doesn't publish departure times, Ratroo doesn't guess — it says \"typical wait, no times published\", because incomplete data beats fake precision. Trust: operator-submitted is never instantly public; identity, vehicle and route are reviewed first.",
+      },
+      {
+        heading: "Where it is now",
+        body: "Live at ratroo.vercel.app, with the rider app and an operations console, and the backend is public on GitHub. Ports and adapters all the way down: write an adapter, register it, done.",
+      },
+    ],
+  },
 ];
 
 export const experience = [

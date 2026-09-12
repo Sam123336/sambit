@@ -7,7 +7,7 @@ import PixelMe, { FRAME } from "./PixelMe";
 const LINES: Record<string, string> = {
   "/": "Hi — I'm Sambit. Nothing here is a slideshow. Start with the playground.",
   "/play": "Place components on the canvas. Every number you see is computed from what you built.",
-  "/work": "Four problems and what actually fixed them. The blurred pair at the bottom — rub those.",
+  "/work": "Five problems and what actually fixed them. Ratroo at the bottom — one project, every screen.",
   "/experience": "Where I've shipped, and what it cost to learn.",
   "/about": "The short version of me, minus the buzzwords.",
   "/resume": "One page. Take it with you if you're hiring.",
@@ -22,14 +22,7 @@ const IDLE_MUSINGS = [
   "Stretching my legs.",
   "Ask me anything — well, email me anything.",
 ];
-const SNOOP_LINES = [
-  "Hey! That one isn't finished!",
-  "Caught you. Mail me and I'll just tell you.",
-  "You found the unreleased one. Respect.",
-];
-
 const STORAGE_KEY = "pixel-guide-dismissed";
-const SNOOP_EVENT = "guide:snoop";
 /** Tested separately: the body needs a gap to stand in, the bubble needs a bigger one. */
 const SPRITE = { w: 52, h: 88 };
 const BUBBLE = { w: 224, h: 78 };
@@ -40,7 +33,7 @@ const CONTENT =
 
 const pick = <T,>(xs: readonly T[]) => xs[Math.floor(Math.random() * xs.length)];
 
-type Mode = "walk" | "idle" | "coffee" | "work" | "cheer";
+type Mode = "walk" | "idle" | "coffee" | "work";
 
 export default function PixelGuide() {
   const pathname = usePathname();
@@ -220,7 +213,7 @@ export default function PixelGuide() {
   // scrolling slides content under it — get out of the way when that happens
   useEffect(() => {
     if (dismissed || !ready) return;
-    if (mode === "walk" || mode === "cheer") return;
+    if (mode === "walk") return;
 
     let queued = false;
     const check = () => {
@@ -260,7 +253,7 @@ export default function PixelGuide() {
   // turn to watch the cursor, but only while standing still
   useEffect(() => {
     if (dismissed || !ready) return;
-    if (mode === "walk" || mode === "cheer") return;
+    if (mode === "walk") return;
 
     const onMove = (e: PointerEvent) => {
       cursorX.current = e.clientX;
@@ -275,23 +268,6 @@ export default function PixelGuide() {
       clearInterval(watch);
     };
   }, [dismissed, ready, mode]);
-
-  useEffect(() => {
-    if (dismissed || !ready) return;
-    const onSnoop = () => {
-      clearAll();
-      setMode("cheer");
-      setFrame(FRAME.cheer);
-      setOverride(pick(SNOOP_LINES));
-      later(() => {
-        setMode("idle");
-        setFrame(FRAME.stand);
-        later(() => roamRef.current(), 3000);
-      }, 2600);
-    };
-    window.addEventListener(SNOOP_EVENT, onSnoop);
-    return () => window.removeEventListener(SNOOP_EVENT, onSnoop);
-  }, [dismissed, ready, clearAll]);
 
   if (dismissed || !ready) return null;
 
@@ -326,9 +302,7 @@ export default function PixelGuide() {
         style={{ transform: `scaleX(${facing})` }}
         className={`block transition-opacity duration-500 ${crowded ? "opacity-40" : "opacity-100"}`}
       >
-        <span className={`block ${mode === "cheer" ? "guide-hop" : ""}`}>
-          <PixelMe frame={frame} height={84} />
-        </span>
+        <PixelMe frame={frame} height={84} />
       </span>
     </div>
   );
