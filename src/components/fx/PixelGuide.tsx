@@ -7,7 +7,7 @@ import PixelMe, { FRAME } from "./PixelMe";
 const LINES: Record<string, string> = {
   "/": "Hi — I'm Sambit. Nothing here is a slideshow. Start with the playground.",
   "/play": "Place components on the canvas. Every number you see is computed from what you built.",
-  "/work": "Five problems and what actually fixed them. Ratroo at the bottom — one project, every screen.",
+  "/work": "Five problems and what actually fixed them. The frosted screens at the bottom aren't a bug.",
   "/experience": "Where I've shipped, and what it cost to learn.",
   "/about": "The short version of me, minus the buzzwords.",
   "/resume": "One page. Take it with you if you're hiring.",
@@ -249,6 +249,13 @@ export default function PixelGuide() {
       window.removeEventListener("resize", check);
     };
   }, [dismissed, ready, mode, bodyBlocked, bubbleBlocked, findClearSpot, walkTo, settle, clearAll]);
+
+  // anything on the page can hand the guide a line: window.dispatchEvent(new CustomEvent("guide:say", { detail }))
+  useEffect(() => {
+    const say = (e: Event) => setOverride((e as CustomEvent<string>).detail);
+    window.addEventListener("guide:say", say);
+    return () => window.removeEventListener("guide:say", say);
+  }, []);
 
   // turn to watch the cursor, but only while standing still
   useEffect(() => {
