@@ -1,11 +1,19 @@
 import Image from "next/image";
 import PageShell from "@/components/nav/PageShell";
 import DeviceStrip from "@/components/fx/DeviceStrip";
-import { workStories } from "@/data/profile";
+import DeviceFrame from "@/components/fx/DeviceFrame";
+import ScratchReveal from "@/components/fx/ScratchReveal";
+import { profile, workStories } from "@/data/profile";
 
 const CONTEXTIFLY_URL = "https://www.contextifly.in/";
 // thum.io renders a screenshot of the live site on request
 const CONTEXTIFLY_SHOT = `https://image.thum.io/get/width/1400/${CONTEXTIFLY_URL}`;
+
+const COOKING_SHOTS = [
+  ["/work/cooking-map.webp", "Everything happening around you, on the map — and the time machine to scrub the day forward"],
+  ["/work/cooking-event.webp", "An event page: when it starts, how far it is, whether it is up next"],
+] as const;
+const COOKING_MAIL = `mailto:${profile.email}?subject=${encodeURIComponent("The thing you're cooking")}`;
 
 const RATROO_URL = "https://ratroo.vercel.app";
 const RATROO_REPO = "https://github.com/Sam123336/Ratroo_backend";
@@ -197,6 +205,48 @@ export default function WorkPage() {
             </div>
           ))}
         </dl>
+      </div>
+
+      <div className="mt-16">
+        <div className="flex items-baseline justify-between gap-4">
+          <h2 className="font-mono text-xs uppercase tracking-widest text-foreground-muted">
+            cooking something
+          </h2>
+          <a
+            href={COOKING_MAIL}
+            className="font-mono text-[11px] uppercase tracking-widest text-accent hover:underline hover:underline-offset-4"
+          >
+            mail me ↗
+          </a>
+        </div>
+        <p className="mt-3 max-w-lg text-sm text-foreground-muted">
+          Not announced yet. Events around you on a 3D map, filtered to what you actually like,
+          with a time machine to scrub the day forward and see what is on later. The screens are
+          frosted — drag a cursor across one and you see only the bit you are pointing at.
+        </p>
+        <div className="mt-6 flex gap-5">
+          {COOKING_SHOTS.map(([src, caption]) => (
+            <figure key={src} className="w-[8.5rem] shrink-0 sm:w-56 lg:w-64">
+              <DeviceFrame kind="phone">
+                <ScratchReveal
+                  src={src}
+                  alt={caption}
+                  sizes="(min-width: 1024px) 16rem, (min-width: 640px) 14rem, 9rem"
+                />
+              </DeviceFrame>
+              <figcaption className="mt-3 text-[11px] leading-snug text-foreground-muted">
+                {caption}
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+        <p className="mt-6 text-sm text-foreground-muted">
+          Want to know more, or build part of it?{" "}
+          <a href={COOKING_MAIL} className="text-accent hover:underline hover:underline-offset-4">
+            {profile.email}
+          </a>{" "}
+          — I read everything.
+        </p>
       </div>
     </PageShell>
   );
