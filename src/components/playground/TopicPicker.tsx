@@ -11,6 +11,7 @@ export default function TopicPicker() {
   const setMission = useSimStore((s) => s.setMission);
   const sqlOpen = useSimStore((s) => s.sqlOpen);
   const toggleSql = useSimStore((s) => s.toggleSql);
+  const toggleTerm = useSimStore((s) => s.toggleTerm);
 
   return (
     <AnimatePresence>
@@ -61,6 +62,29 @@ export default function TopicPicker() {
                 </motion.button>
               ))}
             </div>
+
+            <motion.button
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.03 * TOPICS.length, duration: 0.3, ease: "easeOut" }}
+              onClick={() => {
+                toggleTerm();
+                setPicker(false);
+              }}
+              className="node-3d group mt-3 flex w-full cursor-pointer items-center gap-4 rounded-xl border border-accent/40 p-4 text-left transition-colors hover:border-accent"
+            >
+              <BrandLogo name="postgres" size={28} />
+              <span className="min-w-0 flex-1">
+                <span className="inline-block rounded border border-accent/40 bg-accent/10 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-widest text-accent">
+                  NEW · SQL
+                </span>
+                <h3 className="mt-2 text-sm font-semibold group-hover:text-accent">SQL Terminal &amp; Games</h3>
+                <p className="mt-1 text-xs text-foreground-muted">
+                  A real database in your browser: create databases and tables, insert and query data, then solve SQL puzzles like “Who broke prod?”.
+                </p>
+              </span>
+              <span className="hidden font-mono text-[10px] uppercase tracking-widest text-accent sm:block">open →</span>
+            </motion.button>
 
             <p className="mt-5 text-center font-mono text-[10px] uppercase tracking-widest text-foreground-muted">
               or follow the guided tour, mission 01 → 11

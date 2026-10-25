@@ -99,6 +99,7 @@ interface SimState {
   packets: PacketBurst[];
   db: SimDb;
   sqlOpen: boolean;
+  termOpen: boolean;
   pickerOpen: boolean;
   setPicker: (open: boolean) => void;
 
@@ -110,6 +111,7 @@ interface SimState {
   setMission: (m: Mission) => void;
   advanceMission: () => void;
   toggleSql: () => void;
+  toggleTerm: () => void;
 
   sendSurge: () => void;
   containerizeApp: () => void;
@@ -501,6 +503,7 @@ export const useSimStore = create<SimState>((set, get) => ({
   packets: [],
   db: createSimDb(),
   sqlOpen: false,
+  termOpen: false,
   pickerOpen: true,
   setPicker: (open) => set({ pickerOpen: open }),
 
@@ -510,6 +513,7 @@ export const useSimStore = create<SimState>((set, get) => ({
   onEdgesChange: (changes) => set((state) => ({ edges: applyEdgeChanges(changes, state.edges) })),
 
   toggleSql: () => set((s) => ({ sqlOpen: !s.sqlOpen })),
+  toggleTerm: () => set((s) => ({ termOpen: !s.termOpen, sqlOpen: s.termOpen ? s.sqlOpen : false })),
 
   firePackets: (bursts) =>
     set((state) => {
