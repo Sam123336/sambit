@@ -22,6 +22,8 @@ export default function Preloader() {
   const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // /?intro replays it: the boot is once-per-session, which hides it while you iterate on it
+    if (new URLSearchParams(window.location.search).has("intro")) sessionStorage.removeItem("preloaded");
     if (sessionStorage.getItem("preloaded")) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       sessionStorage.setItem("preloaded", "1");
