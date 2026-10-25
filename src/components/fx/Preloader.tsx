@@ -58,7 +58,8 @@ export default function Preloader() {
           "-=0.05",
         )
         .fromTo(sub, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" }, "-=0.2")
-        .to(overlay, { yPercent: -100, duration: 0.7, ease: "expo.inOut" }, "+=0.55");
+        .call(() => window.dispatchEvent(new Event("preloader:lift")), [], "+=0.55")
+        .to(overlay, { yPercent: -100, duration: 0.7, ease: "expo.inOut" }, "<");
       tweens.push(timeline);
     };
 
