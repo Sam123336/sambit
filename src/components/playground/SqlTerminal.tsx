@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { useSimStore } from "@/store/simStore";
+import { useDbView } from "@/store/dbViewStore";
 import { loadSqlJs } from "@/lib/sqlterm/load";
 import { Workspace, scan, type Out, type SqlValue } from "@/lib/sqlterm/workspace";
 import { MISSIONS, checkTask, loadProgress, saveProgress, type Mission } from "@/lib/sqlterm/missions";
@@ -92,6 +93,9 @@ function Rows({ columns, rows }: { columns: string[]; rows: SqlValue[][] }) {
 export default function SqlTerminal() {
   const open = useSimStore((s) => s.termOpen);
   const toggle = useSimStore((s) => s.toggleTerm);
+  const pane = useDbView((s) => s.pane);
+  const setPane = useDbView((s) => s.setPane);
+  const publish = useDbView((s) => s.publish);
   const [lines, setLines] = useState<Line[]>([]);
   const [input, setInput] = useState("");
   const [db, setDb] = useState("…");
@@ -124,6 +128,7 @@ export default function SqlTerminal() {
         ws.current = w;
         progress.current = loadProgress();
         setDb(w.current);
+        publish(w.current, w.snapshot());
         setReady(true);
         print(
           say("ok", `SQLite ${v.kind === "rows" ? v.rows[0][0] : ""} — a real SQL database, running in your browser. No server involved.`),
@@ -135,7 +140,7 @@ export default function SqlTerminal() {
         booted.current = false;
         print(say("err", "ERROR: could not load the SQLite engine — check your connection, then close and reopen the terminal."));
       });
-  }, [open]);
+  }, [open, publish]);
 
   useEffect(() => {
     box.current?.scrollTo(0, box.current.scrollHeight);
@@ -155,6 +160,7 @@ export default function SqlTerminal() {
   const startMission = (mm: Mission): Line[] => {
     ws.current!.reseed(mm.db, mm.seed);
     setDb(mm.db);
+    publish(mm.db, ws.current!.snapshot(), null);
     setMission({ id: mm.id, task: 0 });
     return [
       say("ok", `━━ Mission ${mm.id}: ${mm.title}`),
@@ -248,6 +254,8 @@ export default function SqlTerminal() {
         else if (r) out.push(say("warn", `✘ ${r.note}`));
       }
     }
+    const joins = steps.flatMap((x) => (x.out.kind === "rows" ? w.joinViews(x.sql, x.out.rows.length) : []));
+    publish(w.current, w.snapshot(), joins.length ? joins : undefined);
     setDb(w.current);
     setSaveFailed(w.saveFailed);
     print(echo, ...out);
@@ -297,13 +305,19 @@ export default function SqlTerminal() {
   const chips = m ? ["hint", "skip", "solution", "quit"] : ["help", "missions", ".tables", "SHOW DATABASES;"];
 
   return (
-    <div className="pointer-events-auto absolute inset-x-3 bottom-3 top-3 z-40 flex flex-col rounded-xl border border-border bg-bg-elevated/95 font-mono text-xs shadow-[0_24px_60px_-12px_rgba(0,0,0,0.8)] backdrop-blur sm:left-auto sm:right-4 sm:top-4 sm:bottom-4 sm:w-[min(760px,calc(100%-2rem))]">
+    <div className={`pointer-events-auto absolute inset-x-3 bottom-3 top-3 z-40 flex flex-col rounded-xl border border-border bg-bg-elevated/95 font-mono text-xs shadow-[0_24px_60px_-12px_rgba(0,0,0,0.8)] backdrop-blur sm:left-auto sm:right-4 sm:top-4 sm:bottom-4 sm:w-[min(760px,calc(100%-2rem))] lg:w-[min(680px,calc(50%-1rem))] ${pane === "diagram" ? "max-lg:hidden" : ""}`}>
       <div className="flex items-center justify-between border-b border-border px-3 py-2">
         <span className="text-[10px] uppercase tracking-widest text-accent">sql terminal · {db}</span>
         <span className="flex items-center gap-3">
           <span className={`text-[10px] ${saveFailed ? "text-warning" : "text-foreground-muted"}`}>
             {saveFailed ? "can't save — storage blocked" : "saved in this browser"}
           </span>
+          <button
+            onClick={() => setPane("diagram")}
+            className="cursor-pointer rounded border border-border px-1.5 py-0.5 text-[10px] uppercase tracking-widest text-foreground-muted hover:border-accent/50 hover:text-accent lg:hidden"
+          >
+            diagram
+          </button>
           <button onClick={toggle} aria-label="Close SQL terminal" className="cursor-pointer text-sm text-foreground-muted hover:text-foreground">
             ✕
           </button>

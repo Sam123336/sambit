@@ -4,8 +4,46 @@
 // ponytail: CREATE TRIGGER bodies contain ';' and are split wrongly by scan(); use .schema-less DDL.
 
 import type { Database, SqlJsStatic, SqlValue } from "sql.js";
+import { parseJoins, type JoinType } from "./joins";
 
 export type { SqlValue };
+
+export interface TableInfo {
+  name: string;
+  columns: { name: string; type: string; pk: boolean; notNull: boolean }[];
+  fks: { from: string; table: string; to: string | null }[];
+  count: number;
+  /** first PREVIEW_ROWS rows */
+  rows: SqlValue[][];
+  /** row count before the latest statement (drives the "new rows" flash) */
+  prev: number;
+}
+
+export interface JoinSide {
+  table: string;
+  /** up to 4 columns, the join key first */
+  cols: string[];
+  rows: SqlValue[][];
+  total: number;
+  /** index of the join key in `cols`, or -1 */
+  key: number;
+}
+
+export interface JoinView {
+  type: JoinType;
+  on: string;
+  left: JoinSide;
+  right: JoinSide;
+  /** [leftRow, rightRow] pairs that match on the key */
+  links: [number, number][];
+  /** rows the visitor's query actually returned */
+  result: number;
+}
+
+const PREVIEW_ROWS = 6;
+const JOIN_ROWS = 10;
+const q = (name: string) => `"${name.replace(/"/g, '""')}"`;
+const lit = (s: string) => `'${s.replace(/'/g, "''")}'`;
 
 export type Out =
   | { kind: "rows"; columns: string[]; rows: SqlValue[][] }
@@ -244,6 +282,71 @@ export class Workspace {
       `SELECT sql || ';' AS schema FROM sqlite_master WHERE sql IS NOT NULL ${table ? `AND tbl_name = '${table.replace(/'/g, "''")}'` : ""} ORDER BY type DESC, name`,
     );
     return out.kind === "rows" && !out.rows.length ? ok("Empty set") : out;
+  }
+
+  /** every table in the current database, for the left-hand schema view */
+  snapshot(): TableInfo[] {
+    const db = this.dbs.get(this.current)!;
+    try {
+      const names = (db.exec("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY rowid")[0]?.values ?? []).map((r) => String(r[0]));
+      return names.map((name) => {
+        const cols = db.exec(`SELECT name, type, "notnull", pk FROM pragma_table_info(${lit(name)})`)[0]?.values ?? [];
+        const fks = db.exec(`SELECT "from", "table", "to" FROM pragma_foreign_key_list(${lit(name)})`)[0]?.values ?? [];
+        const count = Number(db.exec(`SELECT COUNT(*) FROM ${q(name)}`)[0].values[0][0]);
+        return {
+          name,
+          columns: cols.map(([n, t, nn, pk]) => ({ name: String(n), type: String(t), pk: Number(pk) > 0, notNull: Number(nn) === 1 })),
+          fks: fks.map(([from, table, to]) => ({ from: String(from), table: String(table), to: to === null ? null : String(to) })),
+          count,
+          rows: db.exec(`SELECT * FROM ${q(name)} LIMIT ${PREVIEW_ROWS}`)[0]?.values ?? [],
+          prev: count,
+        };
+      });
+    } catch {
+      return [];
+    }
+  }
+
+  /** for each JOIN in `sql`, the sample rows of both tables and which of them match */
+  joinViews(sql: string, result: number): JoinView[] {
+    const db = this.dbs.get(this.current)!;
+    try {
+      const tables = new Map<string, string>();
+      for (const [n] of db.exec("SELECT name FROM sqlite_master WHERE type IN ('table','view')")[0]?.values ?? []) tables.set(String(n).toLowerCase(), String(n));
+      const side = (table: string, keyCol?: string) => {
+        const r = db.exec(`SELECT * FROM ${q(table)} LIMIT ${JOIN_ROWS}`)[0];
+        const all = r?.columns ?? db.exec(`SELECT name FROM pragma_table_info(${lit(table)})`)[0].values.map((v) => String(v[0]));
+        const keyAt = keyCol ? all.findIndex((c) => c.toLowerCase() === keyCol.toLowerCase()) : -1;
+        const order = [...(keyAt >= 0 ? [keyAt] : []), ...all.map((_, i) => i).filter((i) => i !== keyAt)].slice(0, 4);
+        const values = r?.values ?? [];
+        return {
+          keyValues: values.map((row) => (keyAt >= 0 ? row[keyAt] : null)),
+          side: {
+            table,
+            cols: order.map((i) => all[i]),
+            rows: values.map((row) => order.map((i) => row[i])),
+            total: Number(db.exec(`SELECT COUNT(*) FROM ${q(table)}`)[0].values[0][0]),
+            key: keyAt >= 0 ? 0 : -1,
+          },
+        };
+      };
+      return parseJoins(sql, tables)
+        .slice(0, 3)
+        .map((spec) => {
+          const l = side(spec.left, spec.leftCol);
+          const r = side(spec.right, spec.rightCol);
+          const links: [number, number][] = [];
+          if (l.side.key >= 0 && r.side.key >= 0)
+            l.keyValues.forEach((a, i) =>
+              r.keyValues.forEach((b, j) => {
+                if (a !== null && b !== null && String(a) === String(b)) links.push([i, j]);
+              }),
+            );
+          return { type: spec.type, on: spec.on, left: l.side, right: r.side, links, result };
+        });
+    } catch {
+      return [];
+    }
   }
 
   /** run one SQL statement against the current database */
