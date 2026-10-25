@@ -13,7 +13,8 @@ const LINES = [
   { ok: true, text: "bringing regions online" },
   { ok: false, text: "production healthy" },
 ];
-const LINE_MS = 420;
+const LINE_MS = 480;
+const CHAR_S = 0.017; // typing speed: the longest line (23 chars) finishes inside one LINE_MS
 
 /** Full-screen terminal boot intro: log lines → "production healthy" → slide away. Once per session; any key or click skips. */
 export default function Preloader() {
@@ -46,6 +47,9 @@ export default function Preloader() {
     const term = overlay.querySelector<HTMLElement>(".pl-term");
     const bar = overlay.querySelector<HTMLElement>(".pl-bar");
     const lines = overlay.querySelectorAll<HTMLElement>(".pl-line");
+    const texts = overlay.querySelectorAll<HTMLElement>(".pl-text");
+    const cursors = overlay.querySelectorAll<HTMLElement>(".pl-cursor");
+    const typers: gsap.core.Tween[] = [];
 
     const finale = (hold: number) => {
       if (cancelled || finished) return;
@@ -66,7 +70,10 @@ export default function Preloader() {
     };
 
     const skip = () => {
-      gsap.set(lines, { opacity: 1, x: 0 });
+      typers.forEach((t) => t.kill());
+      gsap.set(lines, { opacity: 1 });
+      texts.forEach((el, k) => (el.textContent = LINES[k].text));
+      cursors.forEach((el, k) => (el.style.visibility = k === LINES.length - 1 ? "visible" : "hidden"));
       finale(0.15);
     };
 
@@ -80,8 +87,24 @@ export default function Preloader() {
         );
       }
       let i = 0;
+      // the [ OK ] prefix lands at once, then the message types out behind a block cursor
       const reveal = () => {
-        tweens.push(gsap.fromTo(lines[i], { opacity: 0, x: -6 }, { opacity: 1, x: 0, duration: 0.18, ease: "power2.out" }));
+        const k = i;
+        const { text } = LINES[k];
+        const typed = { n: 0 };
+        gsap.set(lines[k], { opacity: 1 });
+        if (k > 0) cursors[k - 1].style.visibility = "hidden";
+        cursors[k].style.visibility = "visible";
+        typers.push(
+          gsap.to(typed, {
+            n: text.length,
+            duration: text.length * CHAR_S,
+            ease: "none",
+            onUpdate: () => {
+              texts[k].textContent = text.slice(0, Math.round(typed.n));
+            },
+          }),
+        );
         i += 1;
       };
       reveal();
@@ -107,6 +130,7 @@ export default function Preloader() {
       window.removeEventListener("pointerdown", skip);
       if (interval) clearInterval(interval);
       tweens.forEach((t) => t.kill());
+      typers.forEach((t) => t.kill());
       document.documentElement.style.overflow = "";
     };
   }, [show]);
@@ -139,8 +163,12 @@ export default function Preloader() {
         {LINES.map((l) => (
           <p key={l.text} className="pl-line opacity-0">
             <span className={l.ok ? "text-success" : "text-accent"}>{l.ok ? "[ OK ]" : ">"}</span>{" "}
-            <span className={l.ok ? "text-foreground-muted" : "text-success"}>{l.text}</span>
-            {!l.ok && <span className="animate-pulse text-accent"> _</span>}
+            {/* filled by the typing tween; left childless so React has nothing to reconcile */}
+            <span className={`pl-text ${l.ok ? "text-foreground-muted" : "text-success"}`} />
+            <span
+              className="pl-cursor ml-0.5 inline-block h-[1.05em] w-[0.5em] translate-y-[0.15em] animate-pulse bg-accent"
+              style={{ visibility: "hidden" }}
+            />
           </p>
         ))}
       </div>
