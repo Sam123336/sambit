@@ -18,6 +18,7 @@ import ComponentTray from "./ComponentTray";
 import MissionRail from "./MissionRail";
 import SqlPanel from "./SqlPanel";
 import SqlTerminal from "./SqlTerminal";
+import DbVisualizer from "./DbVisualizer";
 import TopicPicker from "./TopicPicker";
 import AmbientBlobs from "@/components/fx/AmbientBlobs";
 import type { NodeKind, TrayItem } from "./types";
@@ -94,6 +95,7 @@ function Inner({ trayItems }: { trayItems: TrayItem[] }) {
       <MissionRail />
       <ComponentTray items={trayItems} />
       <SqlPanel />
+      <DbVisualizer />
       <SqlTerminal />
       <TopicPicker />
     </div>

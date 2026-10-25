@@ -60,6 +60,18 @@ async function main() {
     });
   }
 
+  // schema snapshot + join analysis (feeds the left-hand visual)
+  ws.reseed("shop", MISSIONS[1].seed);
+  const snap = ws.snapshot();
+  assert(snap.length === 3 && snap[2].name === "orders" && snap[2].fks.length === 2 && snap[0].count === 5, "snapshot lists tables, FKs and counts");
+  const on = "SELECT c.name, p.name FROM orders o JOIN customers c ON c.id = o.customer_id JOIN products p ON p.id = o.product_id";
+  let jv = ws.joinViews(on, 8);
+  assert(jv.length === 2 && jv[0].left.table === "orders" && jv[0].right.table === "customers" && jv[0].links.length === 8, "chained INNER JOINs resolve aliases and match rows");
+  jv = ws.joinViews("SELECT c.name, o.id FROM customers c LEFT JOIN orders o ON o.customer_id = c.id", 9);
+  assert(jv.length === 1 && jv[0].type === "left" && jv[0].left.table === "customers" && !jv[0].links.some((l) => l[0] === 3), "LEFT JOIN: customer without orders has no link");
+  assert(ws.joinViews("SELECT * FROM orders", 8).length === 0, "no JOIN, no join view");
+  assert(ws.joinViews("SELECT * FROM (SELECT 1) x JOIN orders ON 1 = 1", 1).length === 0, "subquery in FROM is skipped, not mis-parsed");
+
   console.log("all sqlterm self-checks passed");
 }
 
