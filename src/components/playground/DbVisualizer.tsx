@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useSimStore } from "@/store/simStore";
-import { useDbView } from "@/store/dbViewStore";
+import { runCommand, useDbView } from "@/store/dbViewStore";
 import type { JoinSide, JoinView, SqlValue, TableInfo } from "@/lib/sqlterm/workspace";
 
 const cell = (v: SqlValue) =>
@@ -203,7 +203,7 @@ function JoinPanel({ v }: { v: JoinView }) {
 
 export default function DbVisualizer() {
   const open = useSimStore((s) => s.termOpen);
-  const { db, tables, join, joinKey, pane } = useDbView();
+  const { db, tables, databases, join, joinKey, pane } = useDbView();
   const replay = useDbView((s) => s.replay);
   const clearJoin = useDbView((s) => s.clearJoin);
   const setPane = useDbView((s) => s.setPane);
@@ -228,6 +228,35 @@ export default function DbVisualizer() {
             {tables.length} table{tables.length === 1 ? "" : "s"}
           </p>
         </div>
+
+        {databases.length > 0 && (
+          <div className="mt-4 flex flex-wrap items-center gap-2 font-mono text-[11px]">
+            <AnimatePresence initial={false}>
+              {databases.map((d) => (
+                <motion.button
+                  key={d.name}
+                  layout
+                  initial={{ opacity: 0, scale: 0.85 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.85 }}
+                  onClick={() => d.name !== db && runCommand(`USE ${d.name};`)}
+                  title={d.name === db ? "current database" : `USE ${d.name};`}
+                  className={`flex items-center gap-1.5 rounded-md border px-2.5 py-1 transition-colors ${
+                    d.name === db
+                      ? "border-accent bg-accent/10 text-accent"
+                      : "cursor-pointer border-border text-foreground-muted hover:border-accent/50 hover:text-accent"
+                  }`}
+                >
+                  <span aria-hidden>▤</span>
+                  {d.name}
+                  <span className="text-[10px] opacity-60">
+                    {d.tables} table{d.tables === 1 ? "" : "s"}
+                  </span>
+                </motion.button>
+              ))}
+            </AnimatePresence>
+          </div>
+        )}
 
         {join && join.length > 0 && (
           <section className="mt-5">

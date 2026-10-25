@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { useSimStore } from "@/store/simStore";
-import { useDbView } from "@/store/dbViewStore";
+import { setRunner, useDbView } from "@/store/dbViewStore";
 import { loadSqlJs } from "@/lib/sqlterm/load";
 import { Workspace, scan, type Out, type SqlValue } from "@/lib/sqlterm/workspace";
 import { MISSIONS, checkTask, loadProgress, saveProgress, type Mission } from "@/lib/sqlterm/missions";
@@ -28,7 +28,7 @@ const HELP = `Real SQLite (WebAssembly) in your browser. Databases are saved in 
 End SQL statements with ;  — press Enter to continue onto the next line.
 Up/Down: history · Ctrl+L: clear · Ctrl+C: cancel the current input · Shift+Enter: force a newline
 
-Databases   CREATE DATABASE shop;   USE shop;   SHOW DATABASES;   DROP DATABASE shop;
+Databases   CREATE DATABASE shop; (and you are in it)   USE shop;   SHOW DATABASES;   DROP DATABASE shop;
 Tables      CREATE TABLE t (id INTEGER PRIMARY KEY, name TEXT);   SHOW TABLES;   DESCRIBE t;   DROP TABLE t;
 Data        INSERT INTO t (name) VALUES ('a'), ('b');   SELECT * FROM t WHERE ... ORDER BY ... LIMIT ...;
             UPDATE t SET name = 'c' WHERE id = 1;   DELETE FROM t WHERE id = 2;
@@ -128,7 +128,7 @@ export default function SqlTerminal() {
         ws.current = w;
         progress.current = loadProgress();
         setDb(w.current);
-        publish(w.current, w.snapshot());
+        publish(w.current, w.snapshot(), w.databases());
         setReady(true);
         print(
           say("ok", `SQLite ${v.kind === "rows" ? v.rows[0][0] : ""} — a real SQL database, running in your browser. No server involved.`),
@@ -160,7 +160,7 @@ export default function SqlTerminal() {
   const startMission = (mm: Mission): Line[] => {
     ws.current!.reseed(mm.db, mm.seed);
     setDb(mm.db);
-    publish(mm.db, ws.current!.snapshot(), null);
+    publish(mm.db, ws.current!.snapshot(), ws.current!.databases(), null);
     setMission({ id: mm.id, task: 0 });
     return [
       say("ok", `━━ Mission ${mm.id}: ${mm.title}`),
@@ -255,11 +255,17 @@ export default function SqlTerminal() {
       }
     }
     const joins = steps.flatMap((x) => (x.out.kind === "rows" ? w.joinViews(x.sql, x.out.rows.length) : []));
-    publish(w.current, w.snapshot(), joins.length ? joins : undefined);
+    publish(w.current, w.snapshot(), w.databases(), joins.length ? joins : undefined);
     setDb(w.current);
     setSaveFailed(w.saveFailed);
     print(echo, ...out);
   };
+
+  // lets the left-hand view run commands here (clicking a database runs USE)
+  useEffect(() => {
+    setRunner(exec);
+    return () => setRunner(null);
+  });
 
   const submit = () => {
     if (!ws.current) return; // still loading: keep what was typed

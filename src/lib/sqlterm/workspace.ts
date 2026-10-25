@@ -233,7 +233,8 @@ export class Workspace {
     if (!NAME_RE.test(name)) return err(`bad database name '${raw}' — use letters, digits and _ (max 32)`);
     if (this.dbs.has(name)) return ifNotExists ? ok(`Database '${name}' already exists`) : err(`database '${name}' already exists`);
     this.dbs.set(name, this.open());
-    return ok(`Database '${name}' created — USE ${name}; to switch to it`);
+    this.current = name; // unlike MySQL, no separate USE needed: you want to build in it right away
+    return ok(`Database '${name}' created — now using it`);
   }
 
   private dropDb(raw: string, ifExists: boolean): Out {
@@ -255,11 +256,16 @@ export class Workspace {
     return ok(`Database changed to '${name}'`);
   }
 
+  /** every database with its table count (for SHOW DATABASES and the left-hand view) */
+  databases(): { name: string; tables: number }[] {
+    return this.names().map((name) => ({
+      name,
+      tables: Number(this.dbs.get(name)!.exec("SELECT COUNT(*) FROM sqlite_master WHERE type = 'table'")[0].values[0][0]),
+    }));
+  }
+
   showDatabases(): Out {
-    const rows = this.names().map((n) => {
-      const t = this.dbs.get(n)!.exec("SELECT COUNT(*) FROM sqlite_master WHERE type = 'table'")[0].values[0][0];
-      return [n === this.current ? `${n} *` : n, t];
-    });
+    const rows = this.databases().map((d) => [d.name === this.current ? `${d.name} *` : d.name, d.tables]);
     return { kind: "rows", columns: ["Database", "Tables"], rows };
   }
 

@@ -23,6 +23,7 @@ async function main() {
   const last = (sql: string) => ws.run(sql).at(-1)!.out;
 
   assert(last("CREATE DATABASE shop;").kind === "ok", "create database");
+  assert(ws.current === "shop" && ws.databases().some((d) => d.name === "shop"), "create database switches to it and lists it");
   assert(last("CREATE DATABASE shop;").kind === "error", "duplicate database rejected");
   assert(last("USE nope;").kind === "error", "unknown database rejected");
   last("USE shop;");
