@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import Link from "next/link";
 import gsap from "gsap";
 import AmbientBlobs from "@/components/fx/AmbientBlobs";
+import DotPortrait from "@/components/fx/DotPortrait";
 import ServerStack3D from "@/components/fx/ServerStack3D";
 import { profile } from "@/data/profile";
 
@@ -73,9 +74,10 @@ export default function Landing() {
   return (
     <main
       ref={rootRef}
-      className="bg-grid relative flex min-h-screen flex-col items-center justify-center gap-8 overflow-hidden px-6 py-16 text-center"
+      className="bg-grid relative flex min-h-screen flex-col items-center justify-center gap-8 overflow-hidden px-6 py-16 text-center lg:pr-[38%]"
     >
       <AmbientBlobs />
+      <DotPortrait />
 
       <div className="hero-stack relative hidden md:block">
         <ServerStack3D />

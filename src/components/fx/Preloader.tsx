@@ -2,17 +2,28 @@
 
 import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
-import { profile } from "@/data/profile";
 
-const DIGITS = ["4", "3", "2", "1", "0"];
-const SECONDS_PER_DIGIT = 1;
+const LINES = [
+  { ok: true, text: "mounting postgres" },
+  { ok: true, text: "warming redis cache" },
+  { ok: true, text: "replicas in sync (3/3)" },
+  { ok: true, text: "starting api gateway" },
+  { ok: true, text: "autoscaler armed" },
+  { ok: true, text: "health checks passing" },
+  { ok: true, text: "bringing regions online" },
+  { ok: false, text: "production healthy" },
+];
+const LINE_MS = 480;
+const CHAR_S = 0.017; // typing speed: the longest line (23 chars) finishes inside one LINE_MS
 
-/** Full-screen countdown intro: logo → 4 3 2 1 0 → wordmark → slide away. Once per session. */
+/** Full-screen terminal boot intro: log lines → "production healthy" → slide away. Once per session; any key or click skips. */
 export default function Preloader() {
   const [show, setShow] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // /?intro replays it: the boot is once-per-session, which hides it while you iterate on it
+    if (new URLSearchParams(window.location.search).has("intro")) sessionStorage.removeItem("preloaded");
     if (sessionStorage.getItem("preloaded")) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       sessionStorage.setItem("preloaded", "1");
@@ -30,17 +41,22 @@ export default function Preloader() {
     document.documentElement.style.overflow = "hidden";
 
     let cancelled = false;
+    let finished = false;
     let interval: ReturnType<typeof setInterval> | undefined;
     const tweens: (gsap.core.Tween | gsap.core.Timeline)[] = [];
 
     const logo = overlay.querySelector<HTMLElement>(".pl-logo");
-    const digit = overlay.querySelector<HTMLElement>(".pl-digit");
+    const term = overlay.querySelector<HTMLElement>(".pl-term");
     const bar = overlay.querySelector<HTMLElement>(".pl-bar");
-    const chars = overlay.querySelectorAll<HTMLElement>(".pl-char");
-    const sub = overlay.querySelector<HTMLElement>(".pl-sub");
+    const lines = overlay.querySelectorAll<HTMLElement>(".pl-line");
+    const texts = overlay.querySelectorAll<HTMLElement>(".pl-text");
+    const cursors = overlay.querySelectorAll<HTMLElement>(".pl-cursor");
+    const typers: gsap.core.Tween[] = [];
 
-    const finale = () => {
-      if (cancelled || !digit) return;
+    const finale = (hold: number) => {
+      if (cancelled || finished) return;
+      finished = true;
+      if (interval) clearInterval(interval);
       const timeline = gsap.timeline({
         onComplete: () => {
           sessionStorage.setItem("preloaded", "1");
@@ -49,50 +65,60 @@ export default function Preloader() {
         },
       });
       timeline
-        .to(digit, { scale: 0.6, opacity: 0, duration: 0.3, ease: "power3.in" })
-        .to(logo, { opacity: 0, y: -8, duration: 0.25, ease: "power2.in" }, "<")
-        .fromTo(
-          chars,
-          { opacity: 0, y: 26, rotateX: -50 },
-          { opacity: 1, y: 0, rotateX: 0, duration: 0.5, stagger: 0.028, ease: "expo.out" },
-          "-=0.05",
-        )
-        .fromTo(sub, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" }, "-=0.2")
-        .to(overlay, { yPercent: -100, duration: 0.7, ease: "expo.inOut" }, "+=0.55");
+        .to([term, logo], { opacity: 0, y: -8, duration: 0.3, ease: "power2.in" }, `+=${hold}`)
+        .call(() => window.dispatchEvent(new Event("preloader:lift")), [], "+=0.1")
+        .to(overlay, { yPercent: -100, duration: 0.7, ease: "expo.inOut" }, "<");
       tweens.push(timeline);
     };
 
-    // interval-driven count: each digit simply SITS for a full second —
-    // dropped frames can delay a swap but can never shorten one
-    const start = () => {
-      if (cancelled || !digit) return;
-      tweens.push(gsap.fromTo(logo, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }));
-
-      let i = 0;
-      const showDigit = (d: string) => {
-        digit.textContent = d;
-        tweens.push(
-          gsap.fromTo(digit, { scale: 1.12, opacity: 0.4 }, { scale: 1, opacity: 1, duration: 0.25, ease: "power2.out" }),
-        );
-      };
-      showDigit(DIGITS[0]);
-      if (bar) {
-        tweens.push(
-          gsap.fromTo(bar, { scaleX: 0 }, { scaleX: 1, duration: DIGITS.length * SECONDS_PER_DIGIT, ease: "none" }),
-        );
-      }
-      interval = setInterval(() => {
-        i += 1;
-        if (i < DIGITS.length) {
-          showDigit(DIGITS[i]);
-        } else {
-          clearInterval(interval);
-          finale();
-        }
-      }, SECONDS_PER_DIGIT * 1000);
+    const skip = () => {
+      typers.forEach((t) => t.kill());
+      gsap.set(lines, { opacity: 1 });
+      texts.forEach((el, k) => (el.textContent = LINES[k].text));
+      cursors.forEach((el, k) => (el.style.visibility = k === LINES.length - 1 ? "visible" : "hidden"));
+      finale(0.15);
     };
 
-    // wait for full page load so hydration jank can't eat the first digit
+    // interval-driven so a dropped frame can delay a line but never swallow one
+    const start = () => {
+      if (cancelled) return;
+      tweens.push(gsap.fromTo(logo, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }));
+      if (bar) {
+        tweens.push(
+          gsap.fromTo(bar, { scaleX: 0 }, { scaleX: 1, duration: (LINES.length * LINE_MS) / 1000, ease: "none" }),
+        );
+      }
+      let i = 0;
+      // the [ OK ] prefix lands at once, then the message types out behind a block cursor
+      const reveal = () => {
+        const k = i;
+        const { text } = LINES[k];
+        const typed = { n: 0 };
+        gsap.set(lines[k], { opacity: 1 });
+        if (k > 0) cursors[k - 1].style.visibility = "hidden";
+        cursors[k].style.visibility = "visible";
+        typers.push(
+          gsap.to(typed, {
+            n: text.length,
+            duration: text.length * CHAR_S,
+            ease: "none",
+            onUpdate: () => {
+              texts[k].textContent = text.slice(0, Math.round(typed.n));
+            },
+          }),
+        );
+        i += 1;
+      };
+      reveal();
+      interval = setInterval(() => {
+        if (i < LINES.length) reveal();
+        else finale(0.6);
+      }, LINE_MS);
+      window.addEventListener("keydown", skip, { once: true });
+      window.addEventListener("pointerdown", skip, { once: true });
+    };
+
+    // wait for full page load so hydration jank can't eat the first lines
     if (document.readyState === "complete") {
       start();
     } else {
@@ -102,8 +128,11 @@ export default function Preloader() {
     return () => {
       cancelled = true;
       window.removeEventListener("load", start);
+      window.removeEventListener("keydown", skip);
+      window.removeEventListener("pointerdown", skip);
       if (interval) clearInterval(interval);
       tweens.forEach((t) => t.kill());
+      typers.forEach((t) => t.kill());
       document.documentElement.style.overflow = "";
     };
   }, [show]);
@@ -132,36 +161,26 @@ export default function Preloader() {
         </span>
       </div>
 
-      {/* single-digit slot window */}
-      <div className="relative flex h-[24vw] max-h-56 w-full items-center justify-center overflow-hidden">
-        <span
-          className="pl-digit font-mono text-[22vw] font-bold leading-none text-foreground md:text-[12rem]"
-          style={{ opacity: 0 }}
-        >
-          4
-        </span>
-        {/* wordmark takes the stage after the count */}
-        <div className="absolute flex flex-col items-center" style={{ perspective: 600 }}>
-          <div className="flex">
-            {profile.name.toUpperCase().split("").map((ch, i) => (
-              <span
-                key={i}
-                className="pl-char inline-block font-mono text-3xl font-semibold tracking-wide opacity-0 md:text-5xl"
-                style={{ whiteSpace: "pre" }}
-              >
-                {ch}
-              </span>
-            ))}
-          </div>
-          <p className="pl-sub mt-3 font-mono text-[10px] uppercase tracking-[0.4em] text-foreground-muted opacity-0 md:text-xs">
-            Portfolio · breakable
+      <div className="pl-term w-[min(88vw,24rem)] font-mono text-xs leading-7 md:text-sm">
+        {LINES.map((l) => (
+          <p key={l.text} className="pl-line opacity-0">
+            <span className={l.ok ? "text-success" : "text-accent"}>{l.ok ? "[ OK ]" : ">"}</span>{" "}
+            {/* filled by the typing tween; left childless so React has nothing to reconcile */}
+            <span className={`pl-text ${l.ok ? "text-foreground-muted" : "text-success"}`} />
+            <span
+              className="pl-cursor ml-0.5 inline-block h-[1.05em] w-[0.5em] translate-y-[0.15em] animate-pulse bg-accent"
+              style={{ visibility: "hidden" }}
+            />
           </p>
-        </div>
+        ))}
       </div>
 
       <div className="absolute bottom-16 h-px w-48 bg-border md:w-64">
         <div className="pl-bar h-full origin-left bg-accent" style={{ transform: "scaleX(0)" }} />
       </div>
+      <p className="absolute bottom-8 font-mono text-[10px] uppercase tracking-[0.3em] text-foreground-muted/60">
+        press any key to skip
+      </p>
     </div>
   );
 }
