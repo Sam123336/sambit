@@ -19,6 +19,7 @@ const PRESETS = [
 export default function SqlPanel() {
   const open = useSimStore((s) => s.sqlOpen);
   const toggle = useSimStore((s) => s.toggleSql);
+  const toggleTerm = useSimStore((s) => s.toggleTerm);
   const db = useSimStore((s) => s.db);
   const [query, setQuery] = useState("SELECT * FROM orders");
   const [result, setResult] = useState<{ columns: string[]; rows: Row[] } | null>(null);
@@ -38,12 +39,20 @@ export default function SqlPanel() {
 
   if (!open) {
     return (
-      <button
-        onClick={toggle}
-        className="node-3d pointer-events-auto absolute bottom-4 right-4 z-30 cursor-pointer rounded-md border border-border px-3.5 py-2 font-mono text-[11px] uppercase tracking-widest text-foreground-muted backdrop-blur transition-colors hover:border-accent/50 hover:text-accent"
-      >
-        sql console
-      </button>
+      <div className="pointer-events-auto absolute bottom-4 right-4 z-30 flex gap-2 font-mono text-[11px] uppercase tracking-widest">
+        <button
+          onClick={toggleTerm}
+          className="node-3d cursor-pointer rounded-md border border-accent/40 px-3.5 py-2 text-accent backdrop-blur transition-colors hover:border-accent"
+        >
+          sql terminal
+        </button>
+        <button
+          onClick={toggle}
+          className="node-3d cursor-pointer rounded-md border border-border px-3.5 py-2 text-foreground-muted backdrop-blur transition-colors hover:border-accent/50 hover:text-accent"
+        >
+          sql console
+        </button>
+      </div>
     );
   }
 
